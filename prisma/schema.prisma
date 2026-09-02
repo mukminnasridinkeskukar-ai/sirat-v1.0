@@ -1,0 +1,384 @@
+// ==============================================
+// RME (Rekam Medis Elektronik) - Praktik Mandiri Dokter
+// Compliance: Permenkes No. 24 Tahun 2022
+// ==============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- CLINIC ----------
+model Clinic {
+  id          String   @id @default(cuid())
+  name        String
+  address     String   @default("")
+  phone       String   @default("")
+  sipDoctor   String   @default("")
+  logoUrl     String   @default("")
+  kopSurat    String   @default("")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  patients     Patient[]
+  users        UserProfile[]
+  encounters   Encounter[]
+  queues       Queue[]
+  medicines    Medicine[]
+  invoices     Invoice[]
+  auditLogs    AuditLog[]
+}
+
+// ---------- USER PROFILE (linked to NextAuth) ----------
+model UserProfile {
+  id          String   @id @default(cuid())
+  authUserId  String   @unique
+  clinicId    String
+  role        String   @default("resepsionis_admin") // super_admin, dokter_pj, dokter, perawat_bidan, resepsionis_admin, apoteker
+  fullName    String   @default("")
+  sip         String   @default("")
+  str         String   @default("")
+  specialty   String   @default("")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  clinic      Clinic   @relation(fields: [clinicId], references: [id])
+  encounters  Encounter[] @relation("DoctorEncounters")
+  createdSoap SoapNote[]  @relation("DoctorSoap")
+}
+
+// ---------- PATIENT ----------
+model Patient {
+  id            String   @id @default(cuid())
+  clinicId      String
+  rmNumber      String   @unique           // Format: RM-YYYY-XXXX
+  nik           String   @unique           // Encrypted NIK (16 digit)
+  nikHash       String   @unique           // Hash for search
+  fullName      String
+  birthPlace    String   @default("")
+  birthDate     DateTime?
+  gender        String   @default("L")     // L/P
+  address       String   @default("")
+  phone         String   @default("")
+  allergies     String   @default("")     // JSON array string
+  medicalHistory String  @default("")     // JSON array string
+  emergencyContact String @default("")
+  emergencyPhone   String @default("")
+  bloodType     String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  clinic        Clinic   @relation(fields: [clinicId], references: [id])
+  encounters    Encounter[]
+  queues        Queue[]
+  invoices      Invoice[]
+}
+
+// ---------- ENCOUNTER ----------
+model Encounter {
+  id            String    @id @default(cuid())
+  clinicId      String
+  patientId     String
+  doctorId      String
+  encounterDate DateTime  @default(now())
+  encounterType String    @default("rawat_jalan") // rawat_jalan, rawat_inap, emergency
+  status        String    @default("berlangsung") // berlangsung, selesai, dibatalkan
+  chiefComplaint String   @default("")
+  notes         String    @default("")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  createdBy     String    @default("")
+
+  clinic        Clinic    @relation(fields: [clinicId], references: [id])
+  patient       Patient   @relation(fields: [patientId], references: [id])
+  doctor        UserProfile @relation("DoctorEncounters", fields: [doctorId], references: [id])
+  vitalSigns    VitalSign[]
+  soapNotes     SoapNote[]
+  diagnoses     Diagnosis[]
+  procedures    Procedure[]
+  prescriptions Prescription[]
+  labResults    LabResult[]
+  consentForms  ConsentForm[]
+}
+
+// ---------- VITAL SIGNS ----------
+model VitalSign {
+  id            String   @id @default(cuid())
+  encounterId   String
+  clinicId      String
+  nurseId       String   @default("")
+  systolic      Int      @default(0)
+  diastolic     Int      @default(0)
+  heartRate     Int      @default(0)
+  respiratoryRate Int    @default(0)
+  temperature   Float    @default(0)
+  weight        Float    @default(0)
+  height        Float    @default(0)
+  oxygenSat     Float    @default(0)
+  painScale     Int      @default(0)
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  encounter     Encounter @relation(fields: [encounterId], references: [id])
+}
+
+// ---------- SOAP NOTES ----------
+model SoapNote {
+  id            String   @id @default(cuid())
+  encounterId   String   @unique
+  clinicId      String
+  doctorId      String
+  subjective    String   @default("")
+  objective     String   @default("")
+  assessment    String   @default("")
+  plan          String   @default("")
+  instructions  String   @default("")
+  isLocked      Boolean  @default(false)
+  lockedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  encounter     Encounter   @relation(fields: [encounterId], references: [id])
+  doctor        UserProfile  @relation("DoctorSoap", fields: [doctorId], references: [id])
+}
+
+// ---------- DIAGNOSES (ICD-10) ----------
+model Diagnosis {
+  id            String   @id @default(cuid())
+  encounterId   String
+  clinicId      String
+  icd10Code     String
+  icd10Name     String   @default("")
+  diagnosisType String   @default("primer") // primer, sekunder
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  encounter     Encounter @relation(fields: [encounterId], references: [id])
+}
+
+// ---------- PROCEDURES (ICD-9 CM) ----------
+model Procedure {
+  id            String   @id @default(cuid())
+  encounterId   String
+  clinicId      String
+  icd9Code      String
+  icd9Name      String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  encounter     Encounter @relation(fields: [encounterId], references: [id])
+}
+
+// ---------- PRESCRIPTIONS ----------
+model Prescription {
+  id            String   @id @default(cuid())
+  encounterId   String
+  clinicId      String
+  prescriptionNo String  @default("")
+  prescriptionDate DateTime @default(now())
+  isCompound    Boolean  @default(false)
+  notes         String   @default("")
+  status        String   @default("aktif") // aktif, dibatalkan
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  encounter      Encounter          @relation(fields: [encounterId], references: [id])
+  prescriptionItems PrescriptionItem[]
+}
+
+// ---------- PRESCRIPTION ITEMS ----------
+model PrescriptionItem {
+  id            String   @id @default(cuid())
+  prescriptionId String
+  medicineId    String   @default("")
+  medicineName  String
+  dose          String   @default("")
+  frequency     String   @default("")
+  duration      String   @default("")
+  quantity      Int      @default(1)
+  notes         String   @default("")
+  isCompound    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  prescription  Prescription @relation(fields: [prescriptionId], references: [id])
+}
+
+// ---------- MEDICINES (Master) ----------
+model Medicine {
+  id            String   @id @default(cuid())
+  clinicId      String
+  name          String
+  genericName   String   @default("")
+  category      String   @default("")
+  unit          String   @default("tablet")
+  stock         Int      @default(0)
+  price         Float    @default(0)
+  dosageForm    String   @default("")
+  contraindications String @default("")
+  interactions  String   @default("")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  clinic        Clinic   @relation(fields: [clinicId], references: [id])
+}
+
+// ---------- LAB RESULTS ----------
+model LabResult {
+  id            String   @id @default(cuid())
+  encounterId   String
+  clinicId      String
+  labType       String   @default("")
+  result        String   @default("")
+  normalRange   String   @default("")
+  isAbnormal    Boolean  @default(false)
+  fileUrl       String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  encounter     Encounter @relation(fields: [encounterId], references: [id])
+}
+
+// ---------- CONSENT FORMS ----------
+model ConsentForm {
+  id            String   @id @default(cuid())
+  encounterId   String
+  clinicId      String
+  consentType   String   @default("tindakan")
+  content       String   @default("")
+  patientSignature String @default("")
+  doctorSignature String  @default("")
+  signedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  encounter     Encounter @relation(fields: [encounterId], references: [id])
+}
+
+// ---------- INVOICES ----------
+model Invoice {
+  id            String   @id @default(cuid())
+  clinicId      String
+  encounterId   String   @default("")
+  patientId     String
+  invoiceNo     String   @default("")
+  invoiceDate   DateTime @default(now())
+  subtotal      Float    @default(0)
+  discount      Float    @default(0)
+  total         Float    @default(0)
+  paymentMethod String   @default("cash") // cash, qris, transfer
+  paymentStatus String   @default("belum_bayar") // belum_bayar, lunas
+  paidAt        DateTime?
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  clinic        Clinic   @relation(fields: [clinicId], references: [id])
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  invoiceItems  InvoiceItem[]
+}
+
+// ---------- INVOICE ITEMS ----------
+model InvoiceItem {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  itemType      String   @default("tindakan") // tindakan, obat, lab, lainnya
+  itemName      String
+  quantity      Int      @default(1)
+  unitPrice     Float    @default(0)
+  total         Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+// ---------- QUEUE ----------
+model Queue {
+  id            String   @id @default(cuid())
+  clinicId      String
+  patientId     String
+  queueNumber   Int
+  queueDate     DateTime @default(now())
+  status        String   @default("menunggu") // menunggu, dipanggil, sedang_diperiksa, selesai, dibatalkan
+  queueType     String   @default("walk_in") // walk_in, appointment
+  encounterId   String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+  createdBy     String   @default("")
+
+  clinic        Clinic   @relation(fields: [clinicId], references: [id])
+  patient       Patient  @relation(fields: [patientId], references: [id])
+}
+
+// ---------- AUDIT LOGS (IMMUTABLE) ----------
+model AuditLog {
+  id            String   @id @default(cuid())
+  clinicId      String   @default("")
+  userId        String   @default("")
+  userName      String   @default("")
+  action        String   @default("")
+  tableName     String   @default("")
+  recordId      String   @default("")
+  oldData       String   @default("")
+  newData       String   @default("")
+  ipAddress     String   @default("")
+  createdAt     DateTime @default(now())
+
+  clinic        Clinic?  @relation(fields: [clinicId], references: [id])
+}
+
+// ---------- ICD-10 CACHE ----------
+model Icd10 {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String   @default("")
+  category      String   @default("")
+}
+
+// ---------- ICD-9 CM CACHE ----------
+model Icd9Cm {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String   @default("")
+  category      String   @default("")
+}
