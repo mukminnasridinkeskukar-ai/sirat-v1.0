@@ -1,0 +1,1654 @@
+# =============================================================
+# Hasura GraphQL Engine Metadata
+# RME Praktik Mandiri Dokter
+# =============================================================
+# Cara apply:
+#   hasura metadata apply --endpoint https://<your-nhost>.nhost.run --admin-secret <SECRET>
+# =============================================================
+
+version: 3
+
+# ---------------------------------------------------------------
+# 1. TABLE TRACKING — Tabel yang di-track oleh Hasura
+# ---------------------------------------------------------------
+tables:
+  - !!inc/table
+    schema: public
+    name: clinics
+  - !!inc/table
+    schema: public
+    name: users_profile
+  - !!inc/table
+    schema: public
+    name: patients
+  - !!inc/table
+    schema: public
+    name: encounters
+  - !!inc/table
+    schema: public
+    name: vital_signs
+  - !!inc/table
+    schema: public
+    name: soap_notes
+  - !!inc/table
+    schema: public
+    name: diagnoses
+  - !!inc/table
+    schema: public
+    name: procedures
+  - !!inc/table
+    schema: public
+    name: prescriptions
+  - !!inc/table
+    schema: public
+    name: prescription_items
+  - !!inc/table
+    schema: public
+    name: medicines
+  - !!inc/table
+    schema: public
+    name: lab_results
+  - !!inc/table
+    schema: public
+    name: consent_forms
+  - !!inc/table
+    schema: public
+    name: invoices
+  - !!inc/table
+    schema: public
+    name: invoice_items
+  - !!inc/table
+    schema: public
+    name: queues
+  - !!inc/table
+    schema: public
+    name: audit_logs
+  - !!inc/table
+    schema: public
+    name: icd10
+  - !!inc/table
+    schema: public
+    name: icd9cm
+
+  # View untuk subscription antrian realtime
+  - !!inc/table
+    schema: public
+    name: v_antrian_hari_ini
+    is_view: true
+
+
+# ---------------------------------------------------------------
+# 2. TABLE RELATIONSHIPS
+# ---------------------------------------------------------------
+table_relationships:
+  # --- users_profile ---
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: users_profile
+    name: clinic
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: clinics
+        insertion_order: null
+        column_mapping:
+          clinic_id: id
+    type: object
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: users_profile
+    name: encounters
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: encounters
+        insertion_order: null
+        column_mapping:
+          id: doctor_id
+    type: array
+
+  # --- patients ---
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: patients
+    name: clinic
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: clinics
+        insertion_order: null
+        column_mapping:
+          clinic_id: id
+    type: object
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: patients
+    name: encounters
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: encounters
+        insertion_order: null
+        column_mapping:
+          id: patient_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: patients
+    name: queues
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: queues
+        insertion_order: null
+        column_mapping:
+          id: patient_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: patients
+    name: invoices
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: invoices
+        insertion_order: null
+        column_mapping:
+          id: patient_id
+    type: array
+
+  # --- encounters ---
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: clinic
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: clinics
+        insertion_order: null
+        column_mapping:
+          clinic_id: id
+    type: object
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: patient
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: patients
+        insertion_order: null
+        column_mapping:
+          patient_id: id
+    type: object
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: doctor
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: users_profile
+        insertion_order: null
+        column_mapping:
+          doctor_id: id
+    type: object
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: vital_signs
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: vital_signs
+        insertion_order: null
+        column_mapping:
+          id: encounter_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: soap_notes
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: soap_notes
+        insertion_order: null
+        column_mapping:
+          id: encounter_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: diagnoses
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: diagnoses
+        insertion_order: null
+        column_mapping:
+          id: encounter_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: procedures
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: procedures
+        insertion_order: null
+        column_mapping:
+          id: encounter_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: prescriptions
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: prescriptions
+        insertion_order: null
+        column_mapping:
+          id: encounter_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: lab_results
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: lab_results
+        insertion_order: null
+        column_mapping:
+          id: encounter_id
+    type: array
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: encounters
+    name: consent_forms
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: consent_forms
+        insertion_order: null
+        column_mapping:
+          id: encounter_id
+    type: array
+
+  # --- prescriptions ---
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: prescriptions
+    name: encounter
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: encounters
+        insertion_order: null
+        column_mapping:
+          encounter_id: id
+    type: object
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: prescriptions
+    name: prescription_items
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: prescription_items
+        insertion_order: null
+        column_mapping:
+          id: prescription_id
+    type: array
+
+  # --- invoices ---
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: invoices
+    name: patient
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: patients
+        insertion_order: null
+        column_mapping:
+          patient_id: id
+    type: object
+
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: invoices
+    name: invoice_items
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: invoice_items
+        insertion_order: null
+        column_mapping:
+          id: invoice_id
+    type: array
+
+  # --- audit_logs ---
+  - !!inc/table_relationship
+    table:
+      schema: public
+      name: audit_logs
+    name: clinic
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: clinics
+        insertion_order: null
+        column_mapping:
+          clinic_id: id
+    type: object
+
+
+# ---------------------------------------------------------------
+# 3. PERMISSIONS PER ROLE
+#    Menggunakan X-Hasura-User-Id session variable dari Nhost Auth
+# ---------------------------------------------------------------
+
+# ===================== SUPER_ADMIN =====================
+# Akses penuh ke semua tabel
+permissions_for_roles:
+  # ---------- PATIENTS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: patients
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true } }
+        columns:
+          - id
+          - clinic_id
+          - rm_number
+          - nik_encrypted
+          - nik_hash
+          - full_name
+          - birth_place
+          - birth_date
+          - gender
+          - address
+          - phone
+          - allergies
+          - medical_history
+          - emergency_contact
+          - emergency_phone
+          - blood_type
+          - created_at
+          - updated_at
+          - created_by
+      insert:
+        check: {}
+        columns:
+          - clinic_id
+          - rm_number
+          - nik_encrypted
+          - nik_hash
+          - full_name
+          - birth_place
+          - birth_date
+          - gender
+          - address
+          - phone
+          - allergies
+          - medical_history
+          - emergency_contact
+          - emergency_phone
+          - blood_type
+          - created_by
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: { deleted_at: { _is_null: true } }
+        columns:
+          - full_name
+          - birth_place
+          - birth_date
+          - gender
+          - address
+          - phone
+          - allergies
+          - medical_history
+          - emergency_contact
+          - emergency_phone
+          - blood_type
+
+  # ---------- ENCOUNTERS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: encounters
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true } }
+        allow_aggregations: true
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- SOAP_NOTES ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: soap_notes
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+        columns: '*'   # Super admin bisa update semua kolom
+
+  # ---------- VITAL_SIGNS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: vital_signs
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- DIAGNOSES ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: diagnoses
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- PROCEDURES ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: procedures
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- PRESCRIPTIONS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: prescriptions
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- PRESCRIPTION_ITEMS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: prescription_items
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert: { check: {} }
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  # ---------- MEDICINES ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: medicines
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true }, is_active: true } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- LAB_RESULTS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: lab_results
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- CONSENT_FORMS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: consent_forms
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- INVOICES ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: invoices
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true } }
+        allow_aggregations: true
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- INVOICE_ITEMS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: invoice_items
+    permissions:
+      select: { filter: {} }
+      insert: { check: {} }
+      update: { filter: {} , check: {} }
+
+  # ---------- QUEUES ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: queues
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true } }
+        allow_aggregations: true
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  # ---------- AUDIT_LOGS — HANYA SELECT, TANPA INSERT/UPDATE/DELETE ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: audit_logs
+    permissions:
+      select:
+        filter: {}
+        columns:
+          - id
+          - clinic_id
+          - user_id
+          - user_name
+          - action
+          - table_name
+          - record_id
+          - old_data
+          - new_data
+          - ip_address
+          - user_agent
+          - created_at
+      # TIDAK ADA insert, update, atau delete
+
+  # ---------- ICD10 (read-only) ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: icd10
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: icd9cm
+    permissions:
+      select: { filter: {} }
+
+  # ---------- VIEW: ANTRIAN ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: v_antrian_hari_ini
+    permissions:
+      select: { filter: {} }
+
+  # ---------- USERS_PROFILE ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: users_profile
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert: { check: {} }
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  # ---------- CLINICS ----------
+  - !!inc/permission
+    role_name: super_admin
+    table:
+      schema: public
+      name: clinics
+    permissions:
+      select: { filter: {} }
+      insert: { check: {} }
+      update: { filter: {} , check: {} }
+
+
+  # ===================== RESEPSIONIS_ADMIN =====================
+  # Bisa: insert/select/update patients, encounters
+  # TIDAK BOLEH: update/insert soap_notes, diagnoses, procedures
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: patients
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        columns:
+          - full_name
+          - birth_place
+          - birth_date
+          - gender
+          - address
+          - phone
+          - blood_type
+          - emergency_contact
+          - emergency_phone
+          # TIDAK termasuk: nik_encrypted, nik_hash, allergies, medical_history
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: encounters
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+        columns:
+          - status
+          - notes
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: queues
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: invoices
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: invoice_items
+    permissions:
+      select: { filter: {} }
+      insert: { check: {} }
+      update: { filter: {}, check: {} }
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: v_antrian_hari_ini
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: audit_logs
+    permissions:
+      select:
+        filter: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        columns:
+          - id - user_name - action - table_name
+          - record_id - created_at
+          # TIDAK bisa lihat old_data/new_data (berisi data sensitif)
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: users_profile
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+
+  - !!inc/permission
+    role_name: resepsionis_admin
+    table:
+      schema: public
+      name: clinics
+    permissions:
+      select: { filter: { id: { _eq: X-Hasura-Clinic-Id } } }
+
+
+  # ===================== DOKTER =====================
+  # Bisa select patients di kliniknya
+  # Bisa insert/update soap_notes HANYA untuk encounter yang dia periksa
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: patients
+    permissions:
+      select:
+        filter:
+          deleted_at: { _is_null: true }
+          clinic_id: { _eq: X-Hasura-Clinic-Id }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: encounters
+    permissions:
+      select:
+        filter:
+          deleted_at: { _is_null: true }
+          clinic_id: { _eq: X-Hasura-Clinic-Id }
+          doctor_id: { _eq: X-Hasura-User-Id }
+        allow_aggregations: true
+      insert:
+        check:
+          clinic_id: { _eq: X-Hasura-Clinic-Id }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          doctor_id: X-Hasura-User-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter:
+          deleted_at: { _is_null: true }
+          clinic_id: { _eq: X-Hasura-Clinic-Id }
+          doctor_id: { _eq: X-Hasura-User-Id }
+        check: {}
+
+  # SOAP: hanya bisa select + insert/update untuk encounter miliknya
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: soap_notes
+    permissions:
+      select:
+        filter:
+          deleted_at: { _is_null: true }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          doctor_id: X-Hasura-User-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter:
+          deleted_at: { _is_null: true }
+          created_by: { _eq: X-Hasura-User-Id }
+          is_locked: { _eq: false }
+        check:
+          is_locked: { _eq: false }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: vital_signs
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: diagnoses
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: procedures
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: prescriptions
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, created_by: { _eq: X-Hasura-User-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: prescription_items
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert: { check: {} }
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: queues
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: lab_results
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: consent_forms
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: v_antrian_hari_ini
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: icd10
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: icd9cm
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: medicines
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true }, is_active: true } }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: clinics
+    permissions:
+      select: { filter: { id: { _eq: X-Hasura-Clinic-Id } } }
+
+  - !!inc/permission
+    role_name: dokter
+    table:
+      schema: public
+      name: users_profile
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+
+
+  # ===================== DOKTER_PJ =====================
+  # Sama seperti dokter + akses penuh SOAP + laporan
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: patients
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: encounters
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        allow_aggregations: true
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          doctor_id: X-Hasura-User-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: soap_notes
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          doctor_id: X-Hasura-User-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true } }
+        check: {}
+        columns: '*'   # Dokter PJ bisa update semua SOAP (termasuk lock)
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: vital_signs
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: diagnoses
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: procedures
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: prescriptions
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: prescription_items
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert: { check: {} }
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: medicines
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true }, is_active: true } }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: queues
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      update: { filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: lab_results
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: consent_forms
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: invoices
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        allow_aggregations: true
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: audit_logs
+    permissions:
+      select:
+        filter: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: v_antrian_hari_ini
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: icd10
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: icd9cm
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: clinics
+    permissions:
+      select: { filter: { id: { _eq: X-Hasura-Clinic-Id } } }
+
+  - !!inc/permission
+    role_name: dokter_pj
+    table:
+      schema: public
+      name: users_profile
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } } }
+
+
+  # ===================== PERAWAT_BIDAN =====================
+  # Bisa input vital sign, asesmen awal, bantu CPPT
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: patients
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: encounters
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: vital_signs
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert:
+        check: {}
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, created_by: { _eq: X-Hasura-User-Id } }
+        check: {}
+
+  # Perawat bisa LIHAT SOAP tapi TIDAK bisa insert/update
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: soap_notes
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: queues
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: medicines
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true }, is_active: true } }
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: icd10
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: icd9cm
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: v_antrian_hari_ini
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: clinics
+    permissions:
+      select: { filter: { id: { _eq: X-Hasura-Clinic-Id } } }
+
+  - !!inc/permission
+    role_name: perawat_bidan
+    table:
+      schema: public
+      name: users_profile
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+
+
+  # ===================== APOTEKER =====================
+  # Baca resep, kelola stok obat
+  - !!inc/permission
+    role_name: apoteker
+    table:
+      schema: public
+      name: prescriptions
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: apoteker
+    table:
+      schema: public
+      name: prescription_items
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } } }
+      insert: { check: {} }
+      update: { filter: { deleted_at: { _is_null: true } }, check: {} }
+
+  - !!inc/permission
+    role_name: apoteker
+    table:
+      schema: public
+      name: medicines
+    permissions:
+      select: { filter: { deleted_at: { _is_null: true } }
+      insert:
+        check: { clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        set:
+          clinic_id: X-Hasura-Clinic-Id
+          created_by: X-Hasura-User-Id
+      update:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+        check: {}
+
+  - !!inc/permission
+    role_name: apoteker
+    table:
+      schema: public
+      name: patients
+    permissions:
+      select:
+        filter:
+          deleted_at: { _is_null: true }
+          clinic_id: { _eq: X-Hasura-Clinic-Id }
+        columns:
+          - id - rm_number - full_name - gender - birth_date
+          - allergies - blood_type
+
+  - !!inc/permission
+    role_name: apoteker
+    table:
+      schema: public
+      name: v_antrian_hari_ini
+    permissions:
+      select: { filter: {} }
+
+  - !!inc/permission
+    role_name: apoteker
+    table:
+      schema: public
+      name: clinics
+    permissions:
+      select: { filter: { id: { _eq: X-Hasura-Clinic-Id } } }
+
+  - !!inc/permission
+    role_name: apoteker
+    table:
+      schema: public
+      name: users_profile
+    permissions:
+      select:
+        filter: { deleted_at: { _is_null: true }, clinic_id: { _eq: X-Hasura-Clinic-Id } }
+
+
+# ---------------------------------------------------------------
+# 4. GRAPHQL SUBSCRIPTIONS
+#    View v_antrian_hari_ini di-track untuk realtime
+# ---------------------------------------------------------------
+
+# --- Custom types (opsional, untuk FHIR mapping) ---
+custom_types:
+  scalars: []
+  enums: []
+  input_objects: []
+  objects: []
+
+
+# ---------------------------------------------------------------
+# 5. NHOST AUTH CUSTOM CLAIMS
+#    Dikonfigurasi di Nhost Dashboard -> Authentication -> JWT Claims
+#    Custom claim name: "x-hasura-allowed-roles"
+#    Custom claim name: "x-hasura-default-role"
+#    Custom claim name: "x-hasura-user-id"
+#    Custom claim name: "x-hasura-clinic-id"
+#
+#    Struktur JWT claims (di Nhost Auth webhook):
+#    {
+#      "x-hasura-allowed-roles": ["super_admin", "dokter_pj", "dokter", ...],
+#      "x-hasura-default-role": "dokter",
+#      "x-hasura-user-id": "uuid-of-user-profile",
+#      "x-hasura-clinic-id": "uuid-of-clinic"
+#    }
+# ---------------------------------------------------------------
+
+
+# ---------------------------------------------------------------
+# 6. ACTIONS (Hasura Actions — untuk Nhost Functions)
+# ---------------------------------------------------------------
+actions:
+  # Generate PDF Resume Medis
+  - !!inc/action
+    name: generate_resume_medis_pdf
+    definition:
+      type: mutation
+      arguments:
+        - name: encounter_id
+          type: uuid!
+      output_type: jsonb
+      handler: https://<your-nhost>.nhost.run/v1/functions/generate-resume-pdf
+      permissions:
+        - role: super_admin
+        - role: dokter_pj
+        - role: dokter
+
+  # Bridge ke SATUSEHAT FHIR
+  - !!inc/action
+    name: send_to_satusehat
+    definition:
+      type: mutation
+      arguments:
+        - name: encounter_id
+          type: uuid!
+      output_type: jsonb
+      handler: https://<your-nhost>.nhost.run/v1/functions/satusehat-bridge
+      permissions:
+        - role: super_admin
+        - role: dokter_pj
+        - role: dokter
+
+  # Lock SOAP (tanda tangan elektronik)
+  - !!inc/action
+    name: lock_soap_note
+    definition:
+      type: mutation
+      arguments:
+        - name: encounter_id
+          type: uuid!
+      output_type: jsonb
+      handler: https://<your-nhost>.nhost.run/v1/functions/lock-soap
+      permissions:
+        - role: super_admin
+        - role: dokter_pj
+        - role: dokter
+
+  # Generate QR Code untuk resep
+  - !!inc/action
+    name: generate_resep_qr
+    definition:
+      type: query
+      arguments:
+        - name: prescription_id
+          type: uuid!
+      output_type: jsonb
+      handler: https://<your-nhost>.nhost.run/v1/functions/generate-qr
+      permissions:
+        - role: super_admin
+        - role: dokter_pj
+        - role: dokter
+        - role: apoteker
+
+  # Cetak kartu pasien
+  - !!inc/action
+    name: generate_patient_card
+    definition:
+      type: query
+      arguments:
+        - name: patient_id
+          type: uuid!
+      output_type: jsonb
+      handler: https://<your-nhost>.nhost.run/v1/functions/generate-patient-card
+      permissions:
+        - role: super_admin
+        - role: resepsionis_admin

@@ -1,0 +1,201 @@
+# =============================================================
+# Nhost Storage Configuration
+# RME Praktik Mandiri Dokter
+# =============================================================
+# Cara apply:
+#   1. Nhost Dashboard -> Storage
+#   2. Atau gunakan Nhost CLI / API
+# =============================================================
+
+# Bucket definitions untuk Nhost Storage
+# Setiap bucket memiliki kebijakan akses sendiri
+
+buckets:
+  # ---------------------------------------------------------------
+  # PASIEN DOCUMENTS
+  # KTP, KK, foto pasien, informed consent scan
+  # Private: hanya bisa diakses via signed URL
+  # ---------------------------------------------------------------
+  - name: pasien-documents
+    is_public: false
+    allowed_mime_types:
+      - image/jpeg
+      - image/png
+      - image/webp
+      - application/pdf
+    file_size_limit: 10485760  # 10 MB
+    # Presigned URL expiry (default 1 jam)
+    presigned_url_expiry: 3600
+
+  # ---------------------------------------------------------------
+  # LAB RESULTS
+  # Hasil laboratorium, radiologi, patologi anatomi
+  # Private: hanya bisa diakses oleh dokter dan perawat
+  # ---------------------------------------------------------------
+  - name: lab-results
+    is_public: false
+    allowed_mime_types:
+      - image/jpeg
+      - image/png
+      - image/dicom
+      - application/pdf
+      - application/dicom
+    file_size_limit: 52428800  # 50 MB (DICOM files bisa besar)
+    presigned_url_expiry: 7200  # 2 jam
+
+  # ---------------------------------------------------------------
+  # CLINIC ASSETS
+  # Logo klinik, kop surat, template dokumen
+  # Public: bisa diakses untuk ditampilkan
+  # ---------------------------------------------------------------
+  - name: clinic-assets
+    is_public: true
+    allowed_mime_types:
+      - image/jpeg
+      - image/png
+      - image/svg+xml
+      - image/webp
+    file_size_limit: 5242880  # 5 MB
+
+  # ---------------------------------------------------------------
+  # CONSENT FORMS
+  # Informed consent digital dengan TTE
+  # Private: sangat sensitif, hanya dokter dan pasien
+  # ---------------------------------------------------------------
+  - name: consent-forms
+    is_public: false
+    allowed_mime_types:
+      - application/pdf
+      - image/jpeg
+      - image/png
+    file_size_limit: 10485760  # 10 MB
+    presigned_url_expiry: 86400  # 24 jam
+
+
+# ---------------------------------------------------------------
+# FILE PATH CONVENTION
+# Sesuai UU PDP No. 27 Tahun 2022: minimasi data pribadi
+# ---------------------------------------------------------------
+#
+# pasien-documents:
+#   {clinic_id}/{patient_id}/ktp/{timestamp}_{filename}
+#   {clinic_id}/{patient_id}/kk/{timestamp}_{filename}
+#   {clinic_id}/{patient_id}/foto/{timestamp}_{filename}
+#
+# lab-results:
+#   {clinic_id}/{patient_id}/{encounter_id}/{date}_{lab_type}_{filename}
+#   {clinic_id}/{patient_id}/{encounter_id}/dicom/{study_uid}_{filename}
+#
+# clinic-assets:
+#   {clinic_id}/logo/{filename}
+#   {clinic_id}/kop-surat/{filename}
+#   {clinic_id}/templates/{filename}
+#
+# consent-forms:
+#   {clinic_id}/{patient_id}/{encounter_id}/{consent_type}_{timestamp}.pdf
+#
+# ---------------------------------------------------------------
+
+
+# ---------------------------------------------------------------
+# CORS CONFIGURATION (untuk akses dari Vercel frontend)
+# ---------------------------------------------------------------
+cors:
+  allowed_origins:
+    - https://your-domain.vercel.app
+    - https://*.vercel.app
+    - http://localhost:3000  # Development
+  allowed_methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+  allowed_headers:
+    - Authorization
+    - x-hasura-role
+    - x-hasura-user-id
+    - x-hasura-clinic-id
+
+
+
+# ---------------------------------------------------------------
+# BACKUP POLICY (sesuai Permenkes 24/2022: retensi min 10 tahun)
+# ---------------------------------------------------------------
+# Nhost handles daily backups automatically.
+# Konfigurasi backup di Nhost Dashboard -> Database -> Backups
+#
+# Rekomendasi:
+#   - Daily backup: ON (default Nhost)
+#   - Point-in-time recovery: ON
+#   - Backup retention: 3650 hari (10 tahun)
+#   - Cross-region backup: ON (untuk disaster recovery)
+#
+# CATATAN PENTING:
+#   Tabel audit_logs TIDAK BOLEH di-DELETE atau di-PURGE.
+#   Bahkan setelah 10 tahun, data dipindahkan ke cold storage,
+#   bukan dihapus. Sesuai Pasal 29: "Kerahasiaan rekam medis
+#   tetap dijaga walau pasien telah meninggal dunia."
+# ---------------------------------------------------------------
+
+
+# ---------------------------------------------------------------
+# NOTES: INTEGRASI DENGAN NHOST AUTH
+# ---------------------------------------------------------------
+# Untuk menghubungkan Nhost Auth users dengan tabel users_profile:
+#
+# 1. Buat Nhost Auth webhook (before user create):
+#    - Trigger saat user baru mendaftar
+#    - Insert ke users_profile dengan role default
+#
+# 2. Custom JWT Claims (di Nhost Dashboard -> Auth):
+#    ```json
+#    {
+#      "x-hasura-allowed-roles": ["<user_role>", "me"],
+#      "x-hasura-default-role": "<user_role>",
+#      "x-hasura-user-id": "<user_profile_id>",
+#      "x-hasura-clinic-id": "<clinic_id>"
+#    }
+#    ```
+#
+# 3. Frontend (Vercel) membaca claims dari JWT:
+#    ```typescript
+#    // Setelah login via Nhost Auth
+#    const jwt = nhost.auth.getAccessToken()
+#    const claims = JSON.parse(atob(jwt.split('.')[1]))
+#    const { 'x-hasura-user-id': userId,
+#            'x-hasura-clinic-id': clinicId,
+#            'x-hasura-default-role': role } = claims
+#    ```
+# ---------------------------------------------------------------
+
+
+# ---------------------------------------------------------------
+# SATUSEHAT BRIDGE — Hasura Event Trigger
+# ---------------------------------------------------------------
+# Gunakan Hasura Event Triggers untuk otomatis kirim ke SATUSEHAT
+# setiap kali SOAP dikunci (is_locked = true)
+#
+# Trigger: AFTER UPDATE on soap_notes
+# Condition: NEW.is_locked = true AND OLD.is_locked = false
+# Endpoint: https://<nhost>/v1/functions/satusehat-bridge
+#
+# FHIR Resources yang dikirim:
+#   1. Patient (if new)         → POST /Patient
+#   2. Encounter               → POST /Encounter
+#   3. Condition (diagnoses)   → POST /Condition
+#   4. Observation (vital signs) → POST /Observation
+#   5. MedicationRequest (resep) → POST /MedicationRequest
+#
+# Konfigurasi event trigger:
+event_triggers:
+  - name: soap_locked_satusehat_sync
+    table:
+      schema: public
+      name: soap_notes
+    events:
+      - update
+    webhook: https://<your-nhost>.nhost.run/v1/functions/satusehat-bridge
+    retry_conf:
+      num_retries: 3
+      interval_sec: 10
+      timeout_sec: 30
