@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Heart, Loader2, Mail, Lock, Zap, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,27 +10,126 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { useNhostAuth } from '@/hooks/use-nhost-auth'
-import { useUIStore } from '@/stores'
-import { isNhostConfigured } from '@/lib/nhost'
+import { isNhostConfigured, nhost } from '@/lib/nhost'
+import { useAuthStore } from '@/stores'
 
-export default function LoginPage() {
+export default function LoginPageInner() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const { signInEmailPassword, loading, error, mode } = useNhostAuth()
-  const navigate = useUIStore((s) => s.navigate)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  // If already authenticated, redirect
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace(redirect)
+    }
+  }, [isAuthenticated, redirect, router])
+
+  // In Nhost mode, check if already signed in on mount
+  useEffect(() => {
+    if (!isNhostConfigured || !nhost) return
+    nhost.auth.getSession().then((session) => {
+      if (session) {
+        const jwt = session.accessToken
+        const claims = parseJwt(jwt || '')
+        const hClaims = claims['https://hasura.io/jwt/claims'] || {}
+        useAuthStore.getState().login({
+          id: hClaims['x-hasura-user-id'] || session.user?.id || '',
+          authUserId: session.user?.id || '',
+          clinicId: hClaims['x-hasura-clinic-id'] || '',
+          role: (hClaims['x-hasura-role'] || 'user') as any,
+          fullName: session.user?.displayName || session.user?.email || '',
+          sip: hClaims['x-hasura-sip'] || '',
+          str: hClaims['x-hasura-str'] || '',
+          specialty: hClaims['x-hasura-specialty'] || '',
+          isActive: true,
+        })
+      }
+    })
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim() || !password.trim()) return
-    const user = await signInEmailPassword(email, password)
-    if (user) navigate('dashboard')
+
+    setLoading(true)
+    setError('')
+
+    try {
+      if (isNhostConfigured && nhost) {
+        // Real Nhost auth
+        const { session, error: authError } = await nhost.auth.signIn({
+          email,
+          password,
+        })
+        if (authError) {
+          setError(authError.message || 'Login gagal. Periksa email dan password.')
+          setLoading(false)
+          return
+        }
+        // Get user profile from JWT claims
+        const jwt = session?.accessToken
+        const claims = parseJwt(jwt || '')
+        const hClaims = claims['https://hasura.io/jwt/claims'] || {}
+        useAuthStore.getState().login({
+          id: hClaims['x-hasura-user-id'] || session?.user?.id || '',
+          authUserId: session?.user?.id || '',
+          clinicId: hClaims['x-hasura-clinic-id'] || '',
+          role: (hClaims['x-hasura-role'] || 'user') as any,
+          fullName: session?.user?.displayName || email,
+          sip: hClaims['x-hasura-sip'] || '',
+          str: hClaims['x-hasura-str'] || '',
+          specialty: hClaims['x-hasura-specialty'] || '',
+          isActive: true,
+        })
+      } else {
+        // Demo mode
+        const { DEMO_USERS, DEMO_CLINIC } = await import('@/lib/mock-data/seed')
+        try {
+          await fetch('/api/seed', { method: 'POST' }).catch(() => {})
+          const clinicRes = await fetch('/api/clinic')
+          if (clinicRes.ok) {
+            const realClinic = await clinicRes.json()
+            if (realClinic?.id) {
+              const demoUser = DEMO_USERS.find(u => u.role === 'super_admin') || DEMO_USERS[0]
+              useAuthStore.getState().login({
+                ...demoUser,
+                clinicId: realClinic.id,
+                clinic: { ...DEMO_CLINIC, id: realClinic.id, name: realClinic.name || DEMO_CLINIC.name, address: realClinic.address || DEMO_CLINIC.address, phone: realClinic.phone || DEMO_CLINIC.phone },
+              })
+            }
+          }
+        } catch { /* fallback */ }
+        const { DEMO_USERS: users2, DEMO_CLINIC: clinic2 } = await import('@/lib/mock-data/seed')
+        const demoUser = users2.find(u => u.role === 'super_admin') || users2[0]
+        if (!useAuthStore.getState().isAuthenticated) {
+          useAuthStore.getState().login({ ...demoUser, clinic: clinic2 })
+        }
+      }
+      router.replace(redirect)
+    } catch (err: any) {
+      setError(err?.message || 'Terjadi kesalahan saat login')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleDemoLogin() {
-    const user = await signInEmailPassword('demo@klinik.com', 'demo1234')
-    if (user) navigate('dashboard')
+    setEmail('demo@klinik.com')
+    setPassword('demo1234')
+    setTimeout(() => {
+      const form = document.querySelector('form')
+      form?.requestSubmit()
+    }, 0)
   }
+
+  const mode = isNhostConfigured ? 'nhost' : 'demo'
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950 p-4">
@@ -164,4 +264,15 @@ export default function LoginPage() {
       </div>
     </div>
   )
+}
+
+function parseJwt(token: string): Record<string, any> {
+  try {
+    const base64 = token.split('.')[1]
+    if (!base64) return {}
+    const json = atob(base64.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(json)
+  } catch {
+    return {}
+  }
 }

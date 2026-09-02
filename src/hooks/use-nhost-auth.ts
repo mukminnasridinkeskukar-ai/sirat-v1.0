@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useMutation } from '@apollo/client/react'
 import { isNhostConfigured, nhost } from '@/lib/nhost'
 import { useAuthStore } from '@/stores'
-import { GET_CLINIC } from '@/lib/graphql/queries'
-import type { UserProfile, Clinic } from '@/types'
+import type { UserProfile } from '@/types'
 import { DEMO_CLINIC, DEMO_USERS } from '@/lib/mock-data/seed'
 
 type AuthMode = 'nhost' | 'demo'
@@ -34,15 +32,17 @@ export function useNhostAuth() {
           // Get user profile from JWT claims
           const jwt = session?.accessToken
           const claims = parseJwt(jwt || '')
+          // Nhost puts Hasura claims under 'https://hasura.io/jwt/claims'
+          const hClaims = claims['https://hasura.io/jwt/claims'] || {}
           const userProfile: UserProfile = {
-            id: claims['x-hasura-user-id'] || session?.user?.id || '',
+            id: hClaims['x-hasura-user-id'] || claims['x-hasura-user-id'] || session?.user?.id || '',
             authUserId: session?.user?.id || '',
-            clinicId: claims['x-hasura-clinic-id'] || '',
-            role: (claims['x-hasura-role'] || 'user') as UserProfile['role'],
+            clinicId: hClaims['x-hasura-clinic-id'] || claims['x-hasura-clinic-id'] || '',
+            role: (hClaims['x-hasura-role'] || claims['x-hasura-role'] || 'user') as UserProfile['role'],
             fullName: session?.user?.displayName || email,
-            sip: claims['x-hasura-sip'] || '',
-            str: claims['x-hasura-str'] || '',
-            specialty: claims['x-hasura-specialty'] || '',
+            sip: hClaims['x-hasura-sip'] || claims['x-hasura-sip'] || '',
+            str: hClaims['x-hasura-str'] || claims['x-hasura-str'] || '',
+            specialty: hClaims['x-hasura-specialty'] || claims['x-hasura-specialty'] || '',
             isActive: true,
             clinic: undefined,
           }
@@ -93,7 +93,7 @@ export function useNhostAuth() {
   return { signInEmailPassword, signOut, loading, error, mode }
 }
 
-function parseJwt(token: string): Record<string, string> {
+function parseJwt(token: string): Record<string, any> {
   try {
     const base64 = token.split('.')[1]
     if (!base64) return {}

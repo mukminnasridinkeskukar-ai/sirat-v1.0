@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLazyQuery } from '@apollo/client/react'
 import { Search, User, X, Loader2, ArrowRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
