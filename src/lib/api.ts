@@ -8,10 +8,11 @@ const API_BASE = '/api'
 // Helper to create headers with auth context
 function authHeaders(): HeadersInit {
   if (typeof window === 'undefined') return {}
-  const u = localStorage.getItem('rme_user')
-  if (!u) return {}
+  const raw = localStorage.getItem('rme_auth')
+  if (!raw) return {}
   try {
-    const user = JSON.parse(u)
+    const parsed = JSON.parse(raw)
+    const user = parsed.state?.user || parsed
     return {
       'Content-Type': 'application/json',
       'x-user-id': user.id || '',
