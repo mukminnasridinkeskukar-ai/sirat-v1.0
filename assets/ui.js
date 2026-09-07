@@ -98,13 +98,14 @@
     toast("Berkas CSV diunduh.", "ok");
   }
 
-  // ---------- QR (lazy load lib) ----------
+  // ---------- QR (lazy load lib — berkas lokal, tanpa CDN) ----------
   let qrLibPromise = null;
   function loadQrLib() {
     if (!qrLibPromise) {
       qrLibPromise = new Promise((resolve, reject) => {
+        if (window.QRCode) { resolve(); return; }
         const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+        s.src = new URL("assets/vendor/qrcode.min.js", document.baseURI).href;
         s.onload = resolve; s.onerror = () => reject(new Error("Gagal memuat pustaka QR"));
         document.head.appendChild(s);
       });

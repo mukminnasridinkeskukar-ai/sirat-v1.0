@@ -2,7 +2,7 @@
    SIRAT — App core: router, auth, shell, dashboard, admin, notifikasi
    ============================================================ */
 (function () {
-  const { $, $$, esc, show, toast, openModal, confirmDialog, fmtTgl, badge, timeline, tableWrap, exportCsv } = window.UI;
+  const { $, $$, esc, show, toast, openModal, confirmDialog, fmtTgl, badge, timeline, tableWrap, exportCsv, BULAN } = window.UI;
   const N = window.SIRAT_NHOST;
   const S = window.SIRAT_CONFIG;
   const Q = window.Q;
@@ -49,7 +49,7 @@
   // ================= ROUTER =================
   function setView(name) {
     SIRAT.view = name;
-    ["landing", "auth", "app", "verify"].forEach((v) => show($("#view-" + v), v === name));
+    ["landing", "auth", "app", "verify", "fatal"].forEach((v) => show($("#view-" + v), v === name));
     window.scrollTo(0, 0);
   }
 
@@ -122,29 +122,72 @@
   }
 
   // ================= DASHBOARD =================
+  const PALET_JENIS = ["#059669", "#0891b2", "#7c3aed", "#d97706", "#dc2626", "#0f766e"];
+
   async function modDashboard(c) {
     const today = new Date();
     const awal = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
     const akhir = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
-    const d = await N.gql(Q.dashStats, { uid: SIRAT.me.id, awal, akhir });
-    const stat = (label, num, ico, kelas) => `
-      <div class="stat"><div><small>${label}</small><span class="num">${num}</span></div><div class="ico ${kelas}">${ico}</div></div>`;
+    const [d, tindakan] = await Promise.all([
+      N.gql(Q.dashStats, { uid: SIRAT.me.id, awal, akhir }),
+      N.gql(Q.dashPerluTindakan, { uid: SIRAT.me.id }),
+    ]);
+    const stat = (label, num, ico, kelas, judul) => `
+      <div class="stat" title="${esc(judul || label)}"><div><small>${label}</small><span class="num">${num}</span></div><div class="ico ${kelas}">${ico}</div></div>`;
     const hitungJenis = {};
     d.jenis_keluar.forEach((x) => { hitungJenis[x.jenis_surat] = (hitungJenis[x.jenis_surat] || 0) + 1; });
     const jenisTop = Object.entries(hitungJenis).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const totalJenis = d.jenis_keluar.length || 1;
-    const tindakan = await N.gql(Q.dashPerluTindakan, { uid: SIRAT.me.id });
+    const totalSemua = d.masuk_total.aggregate.count + d.keluar_total.aggregate.count;
+
+    // Sapaan + identitas
+    const jam = today.getHours();
+    const sapa = jam < 11 ? "Selamat pagi" : jam < 15 ? "Selamat siang" : jam < 19 ? "Selamat sore" : "Selamat malam";
+    const namaDepan = (SIRAT.me.nama || "").trim().split(/\s+/)[0] || "Pengguna";
+    const tglHariIni = `${today.getDate()} ${BULAN[today.getMonth()]} ${today.getFullYear()}`;
+    const bolehTulis = ["SUPERADMIN", "ADMIN", "OPERATOR"].includes(SIRAT.me.role);
+    const tombolTulis = bolehTulis
+      ? `<button class="btn btn-primary" data-goto="buat-surat">📝 Buat Surat</button>`
+      : "";
+
+    // State kosong: panduan mulai cepat alih-alih deretan kartu "0"
+    const masihKosong = totalSemua === 0 && d.dispo_saya.aggregate.count === 0;
+    if (masihKosong) {
+      c.innerHTML = `
+        <div class="dash-hello">
+          <div><h2>${sapa}, ${esc(namaDepan)} 👋</h2>
+          <p class="muted small">${tglHariIni} · <span class="badge blue">${esc(SIRAT.me.role)}</span>${SIRAT.me.unitNama ? " · " + esc(SIRAT.me.unitNama) : ""}</p></div>
+          ${tombolTulis}
+        </div>
+        <div class="panel"><div class="panel-body empty-block" style="padding:3rem 1.4rem">
+          <span class="big">🚀</span>
+          <b style="font-size:1.05rem">Mulai persuratan digital Anda</b>
+          <p class="muted" style="max-width:460px;margin:.4rem auto 0">Belum ada surat tercatat. Buat surat keluar pertama atau registrasikan surat masuk — seluruh proses akan tercatat dan terlacak otomatis.</p>
+          <div class="hero-actions" style="justify-content:center;margin-top:1.2rem">
+            ${bolehTulis ? `<button class="btn btn-primary" data-goto="buat-surat">📝 Buat Surat Pertama</button>` : ""}
+            <button class="btn btn-outline" data-goto="surat-masuk">📥 Registrasi Surat Masuk</button>
+            <button class="btn btn-outline" data-goto="tracking">🔎 Coba Tracking</button>
+          </div>
+        </div></div>`;
+      return;
+    }
 
     c.innerHTML = `
+      <div class="dash-hello">
+        <div><h2>${sapa}, ${esc(namaDepan)} 👋</h2>
+        <p class="muted small">${tglHariIni} · <span class="badge blue">${esc(SIRAT.me.role)}</span>${SIRAT.me.unitNama ? " · " + esc(SIRAT.me.unitNama) : ""}</p></div>
+        ${tombolTulis}
+      </div>
       <div class="cards-row">
         ${stat("Total Surat Masuk", d.masuk_total.aggregate.count, "📥", "g")}
         ${stat("Total Surat Keluar", d.keluar_total.aggregate.count, "📤", "g")}
         ${stat("Surat Draft", d.draft.aggregate.count, "📝", "gr")}
-        ${stat("Menunggu Verifikasi", d.diajukan.aggregate.count + d.diverifikasi.aggregate.count, "📋", "a")}
+        ${stat("Menunggu Verifikasi", d.diajukan.aggregate.count, "📋", "a")}
         ${stat("Menunggu Persetujuan", d.diverifikasi.aggregate.count, "✅", "b")}
         ${stat("Disetujui", d.disetujui.aggregate.count, "✔️", "g")}
         ${stat("Ditolak / Koreksi", d.ditolak.aggregate.count, "❌", "r")}
         ${stat("Surat Selesai", d.selesai.aggregate.count, "🎯", "v")}
+        ${stat("Diarsipkan", d.diarsipkan.aggregate.count, "🗄️", "gr")}
         ${stat("Surat Bulan Ini", d.bulan_ini.aggregate.count, "📅", "v")}
         ${stat("Disposisi Aktif", d.dispo_saya.aggregate.count, "📌", "a")}
       </div>
@@ -153,24 +196,27 @@
           <div class="panel-body"><div class="barchart">${barStatus(d.status_keluar)}</div></div>
         </div>
         <div class="panel"><div class="panel-head"><b>Per Jenis Surat</b><small class="muted">top 6</small></div>
-          <div class="panel-body"><div class="pie-list">${jenisTop.map(([j, n]) => `
-            <div class="pie-item"><span class="legend-dot" style="background:var(--green-600)"></span><span class="grow">${esc(N.LABEL_JENIS[j] || j)}</span>
+          <div class="panel-body"><div class="pie-list">${jenisTop.map(([j, n], idx) => `
+            <div class="pie-item"><span class="legend-dot" style="background:${PALET_JENIS[idx % PALET_JENIS.length]}"></span><span class="grow">${esc(N.LABEL_JENIS[j] || j)}</span>
             <div class="progressbar"><i style="width:${Math.round((n / totalJenis) * 100)}%"></i></div><b>${n}</b></div>`).join("") || '<span class="muted">Belum ada data</span>'}</div>
           </div>
         </div>
       </div>
-      <div class="two-col">
+      <div class="two-col eq">
         <div class="panel"><div class="panel-head"><b>⚡ Perlu Ditindaklanjuti</b><small class="muted">sesuai peran ${esc(SIRAT.me.role)}</small></div>
           <div class="panel-body">${listTindakan(tindakan)}</div>
         </div>
         <div class="panel"><div class="panel-head"><b>📋 Disposisi Menunggu Saya</b></div>
-          <div class="panel-body">${tindakan.dispo.map((x) => `
-            <div style="padding:.6rem 0;border-bottom:1px solid #f1f5f9">
-              <b style="font-size:.88rem">${esc(x.surat_masuk.nomor_surat)}</b>
-              <p class="muted small">${esc(x.surat_masuk.perihal)}</p>
-              <p style="font-size:.85rem">📌 ${esc(x.instruksi)}</p>
-              <p class="small">Batas: <b>${fmtTgl(x.batas_waktu)}</b> ${badge(x.status)}</p>
-            </div>`).join("") || '<div class="empty-block" style="padding:1.4rem"><span class="big">🎉</span>Tidak ada disposisi menunggu.</div>'}
+          <div class="panel-body">${(tindakan.dispo || []).map((x) => {
+            const sm = x.surat_masuk || {};
+            const lewat = x.batas_waktu && String(x.batas_waktu) < new Date().toISOString().slice(0, 10);
+            return `<div class="dispo-item">
+              <div class="dispo-top"><b>${esc(sm.nomor_surat || "(tanpa nomor)")}</b>${badge(x.status)}</div>
+              <p class="muted small">${esc(sm.perihal || "")}</p>
+              <p class="dispo-instruksi">📌 ${esc(x.instruksi)}</p>
+              <p class="small ${lewat ? "overdue" : ""}">Batas: <b>${fmtTgl(x.batas_waktu)}</b>${lewat ? " · <b>melewati batas waktu</b>" : ""}</p>
+            </div>`;
+          }).join("") || '<div class="empty-block" style="padding:1.4rem"><span class="big">🎉</span>Tidak ada disposisi menunggu.</div>'}
           </div>
         </div>
       </div>`;
@@ -183,23 +229,25 @@
     const maks = Math.max(1, ...entri.map((e) => e[1]));
     if (!entri.length) return '<span class="muted">Belum ada data</span>';
     return entri.map(([st, n]) => `
-      <div class="bar"><b>${n}</b><i style="height:${Math.round((n / maks) * 120)}px"></i><span>${esc(N.labelStatus(st))}</span></div>`).join("");
+      <div class="bar" title="${esc(N.labelStatus(st))}: ${n} surat">
+        <b>${n}</b><i class="${N.statusKelas(st)}" style="height:${Math.round((n / maks) * 112) + 8}px"></i>
+        <span>${esc(N.labelStatus(st))}</span></div>`).join("");
   }
 
   function listTindakan(t) {
     const item = [];
     if (["SUPERADMIN", "VERIFIKATOR"].includes(SIRAT.me.role)) {
-      t.keluar.filter((x) => x.status === "DIAJUKAN").forEach((x) =>
+      (t.keluar || []).filter((x) => x.status === "DIAJUKAN").forEach((x) =>
         item.push({ txt: `Verifikasi: ${x.perihal}`, modul: "verifikasi" }));
     }
     if (["SUPERADMIN", "PIMPINAN"].includes(SIRAT.me.role)) {
-      t.keluar.filter((x) => x.status === "DIVERIFIKASI").forEach((x) =>
+      (t.keluar || []).filter((x) => x.status === "DIVERIFIKASI").forEach((x) =>
         item.push({ txt: `Persetujuan: ${x.perihal}`, modul: "persetujuan" }));
     }
-    t.koreksi.forEach((x) => item.push({ txt: `Perbaiki (perlu koreksi): ${x.perihal}`, modul: "surat-keluar" }));
+    (t.koreksi || []).forEach((x) => item.push({ txt: `Perbaiki (perlu koreksi): ${x.perihal}`, modul: "surat-keluar" }));
     if (!item.length) return `<div class="empty-block" style="padding:1.4rem"><span class="big">🎉</span>Semua tugas beres!</div>`;
     return item.slice(0, 8).map((i) => `
-      <button class="btn ghost" style="width:100%;justify-content:flex-start" data-goto="${i.modul}">→ ${esc(i.txt)}</button>`).join("");
+      <button class="tindakan-item" data-goto="${i.modul}"><span class="arrow">→</span><span class="grow">${esc(i.txt)}</span></button>`).join("");
   }
 
   // ================= LOG AKTIVITAS =================
@@ -385,14 +433,14 @@
       show(err, false); btn.disabled = true;
       try {
         const email = $("#daftar-email").value.trim();
-        await N.signUp({
+        const hasil = await N.signUp({
           nama: $("#daftar-nama").value.trim(),
           email,
           password: $("#daftar-password").value,
           username: email.split("@")[0],
           unit_kerja_id: $("#daftar-unit").value || null,
         });
-        toast("Akun dibuat! Silakan masuk.", "ok");
+        toast(hasil.needsVerification ? "Akun dibuat! Cek email Anda untuk verifikasi, lalu masuk." : "Akun dibuat! Silakan masuk.", "ok");
         document.querySelector('[data-auth-tab="login"]').click();
         $("#login-email").value = email;
       } catch (ex) {
@@ -413,29 +461,57 @@
   });
 
   // ================= BOOT =================
+  function configValid() {
+    return Boolean(S.nhostSubdomain) && !/ubahkan|subdomain-anda/i.test(String(S.nhostSubdomain));
+  }
+
+  function showFatal(judul, pesan, detail) {
+    setView("fatal");
+    $("#fatal-body").innerHTML = `
+      <div class="auth-brand">⚠️ <b>${esc(judul)}</b><div>${esc(pesan)}</div></div>
+      ${detail ? `<div class="tl-note" style="margin-top:1rem;white-space:pre-wrap">${esc(detail)}</div>` : ""}
+      <div class="modal-foot"><button class="btn btn-primary" onclick="location.reload()">Muat Ulang</button></div>`;
+  }
+
   async function boot() {
     // Route verifikasi QR publik: ?verify=TOKEN
     const params = new URLSearchParams(location.search);
     if (params.get("verify")) {
-      await N.init();
+      try {
+        await N.init();
+      } catch (e) {
+        return showFatal("Koneksi Gagal", "SIRAT tidak dapat memuat komponen yang diperlukan.", e.message);
+      }
       return modVerify(params.get("verify"));
+    }
+    // Subdomain Nhost masih placeholder → jangan panggil backend, cukup landing + petunjuk
+    if (!configValid()) {
+      showLanding();
+      toast("Backend Nhost belum dikonfigurasi — edit berkas assets/config.js (subdomain & region).", "err");
+      return;
     }
     try {
       const user = await N.getSessionUser();
       if (user) { await afterLogin(); return; }
-    } catch (_) {}
-    showLanding();
+      showLanding();
+    } catch (e) {
+      console.error(e);
+      showLanding();
+      toast("Gagal menghubungi Nhost: " + e.message, "err");
+    }
   }
 
   // Isi pilihan unit kerja di form daftar
-  N.init().then(async () => {
-    try {
-      const d = await N.gql(Q.unitList);
-      $("#daftar-unit").innerHTML = `<option value="">— Pilih unit kerja —</option>` +
-        d.unit_kerja.map((u) => `<option value="${u.id}">${esc(u.nama_unit)}</option>`).join("");
-    } catch (_) {}
-    boot();
-  });
+  N.init()
+    .then(async () => {
+      try {
+        const d = await N.gql(Q.unitList);
+        $("#daftar-unit").innerHTML = `<option value="">— Pilih unit kerja —</option>` +
+          d.unit_kerja.map((u) => `<option value="${u.id}">${esc(u.nama_unit)}</option>`).join("");
+      } catch (_) {}
+      boot();
+    })
+    .catch(() => boot()); // SDK gagal dimuat → tetap tampilkan landing (bukan halaman kosong)
 
   // Registrasi modul inti
   SIRAT.modules.dashboard = modDashboard;

@@ -10,6 +10,15 @@ window.SIRAT_CONFIG = {
   nhostSubdomain: "ubahkan-subdomain-anda",
   nhostRegion: "ap-southeast-1",
 
+  // Opsional — pakai bila memakai domain kustom / self-hosting Nhost.
+  // Jika diisi, nilai ini menggantikan subdomain+region di atas.
+  // Contoh: nhostAuthUrl: "https://auth.sirat.kukar.go.id/v1",
+  //         nhostGraphQLUrl: "https://graphql.sirat.kukar.go.id/v1"
+  nhostAuthUrl: "",
+  nhostGraphQLUrl: "",
+  nhostStorageUrl: "",
+  nhostFunctionsUrl: "",
+
   // Identitas aplikasi:
   namaApp: "SIRAT",
   namaInstansi: "Dinas Kesehatan Kabupaten Kutai Kartanegara",

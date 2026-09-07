@@ -1,13 +1,18 @@
 /* ============================================================
    SIRAT — Klien Nhost (Auth + GraphQL) + helper workflow
-   Dimuat sebagai script klasik; SDK dimuat via dynamic import CDN.
+   SDK @nhost/nhost-js v4.8.0 dimuat dari BERKAS LOKAL
+   (assets/vendor/nhost-js.mjs) — tanpa ketergantungan CDN,
+   sehingga bebas masalah CORS / Private Network Access.
+   API v4.8.0: auth.signInEmailPassword, auth.signUpEmailPassword,
+   nhost.getUserSession(), nhost.refreshSession(), nhost.clearSession().
    ============================================================ */
 (function () {
   const S = window.SIRAT_CONFIG;
   const state = { nhost: null, ready: null };
 
   function sdkUrl() {
-    return "https://esm.sh/@nhost/nhost-js@4";
+    // Selalu relatif terhadap halaman (aman untuk subpath GitHub Pages, mis. /repo/)
+    return new URL("assets/vendor/nhost-js.mjs", document.baseURI).href;
   }
 
   async function init() {
@@ -15,14 +20,28 @@
       state.ready = (async () => {
         const mod = await import(sdkUrl());
         const { createClient } = mod;
-        state.nhost = createClient({
+        const opsi = {
           subdomain: S.nhostSubdomain,
           region: S.nhostRegion,
-        });
+        };
+        // Opsional: URL layanan lengkap untuk self-hosting / domain kustom.
+        // Contoh: nhostAuthUrl: "https://auth.sirat.kukar.go.id/v1",
+        //         nhostGraphQLUrl: "https://graphql.sirat.kukar.go.id/v1"
+        if (S.nhostAuthUrl) opsi.authUrl = S.nhostAuthUrl;
+        if (S.nhostGraphQLUrl) opsi.graphqlUrl = S.nhostGraphQLUrl;
+        if (S.nhostStorageUrl) opsi.storageUrl = S.nhostStorageUrl;
+        if (S.nhostFunctionsUrl) opsi.functionsUrl = S.nhostFunctionsUrl;
+        state.nhost = createClient(opsi);
         return state.nhost;
       })().catch((e) => {
+        // Boleh dicoba lagi pada pemanggilan berikutnya
+        state.ready = null;
         console.error("Gagal memuat Nhost SDK:", e);
-        throw e;
+        const err = new Error(
+          "Pustaka SIRAT gagal dimuat. Pastikan berkas assets/vendor/nhost-js.mjs ikut terunggah ke repositori, lalu muat ulang halaman."
+        );
+        err.sdkFailure = true;
+        throw err;
       });
     }
     return state.ready;
@@ -31,47 +50,80 @@
   // ---------- GraphQL ----------
   async function gql(query, variables) {
     const nhost = await init();
-    const res = await nhost.graphql.request({ query, variables });
-    if (res.error) {
-      const msg = Array.isArray(res.error) ? res.error[0].message : (res.error.message || JSON.stringify(res.error));
-      throw new Error(msg);
+    let res;
+    try {
+      res = await nhost.graphql.request({ query, variables });
+    } catch (e) {
+      // FetchError (HTTP != 2xx) atau kegagalan jaringan
+      const pesan =
+        e && e.body && e.body.message ? e.body.message : e && e.message ? e.message : "Tidak dapat terhubung ke server SIRAT.";
+      throw new Error(pesan);
     }
-    return res.data;
+    const errs = res && res.body && res.body.errors;
+    if (errs && errs.length) {
+      throw new Error(errs[0].message || "Permintaan data gagal.");
+    }
+    return res.body ? res.body.data : undefined;
   }
 
   // ---------- Auth ----------
   async function getSessionUser() {
     const nhost = await init();
-    if (!nhost.auth.isAuthenticated.value) {
-      try { await nhost.auth.refreshSession(3); } catch (_) {}
+    // Sesi tersimpan otomatis di localStorage oleh middleware createClient()
+    let session = nhost.getUserSession();
+    if (!session) {
+      // Coba pulihkan sesi lewat refresh token
+      try { session = await nhost.refreshSession(0); } catch (_) { session = null; }
     }
-    return nhost.auth.getUser();
+    return session && session.user ? session.user : null;
+  }
+
+  function pesanError(e, bawaan) {
+    if (e && e.body) {
+      if (e.body.message) return e.body.message;
+      if (e.body.error) return String(e.body.error).replace(/-/g, " ");
+    }
+    return (e && e.message) || bawaan;
   }
 
   async function signIn(email, password) {
     const nhost = await init();
-    const res = await nhost.auth.signInEmail({ email, password });
-    if (res.error) throw new Error(res.error.message || "Login gagal");
-    return res;
+    let res;
+    try {
+      res = await nhost.auth.signInEmailPassword({ email, password });
+    } catch (e) {
+      throw new Error(pesanError(e, "Email atau kata sandi salah."));
+    }
+    const body = res.body || {};
+    if (body.mfa) throw new Error("Akun ini mengaktifkan MFA. Hubungi administrator.");
+    if (!body.session) throw new Error("Login gagal. Akun mungkin belum terverifikasi atau dinonaktifkan.");
+    return body;
   }
 
   async function signUp(payload) {
     const nhost = await init();
-    const res = await nhost.auth.signUpEmail({
-      email: payload.email,
-      password: payload.password,
-      options: {
-        displayName: payload.nama,
-        metadata: { nama: payload.nama, username: payload.username, unit_kerja_id: payload.unit_kerja_id || null },
-      },
-    });
-    if (res.error) throw new Error(res.error.message || "Pendaftaran gagal");
-    return res;
+    let res;
+    try {
+      res = await nhost.auth.signUpEmailPassword({
+        email: payload.email,
+        password: payload.password,
+        options: {
+          displayName: payload.nama,
+          metadata: { nama: payload.nama, username: payload.username, unit_kerja_id: payload.unit_kerja_id || null },
+        },
+      });
+    } catch (e) {
+      throw new Error(pesanError(e, "Pendaftaran gagal."));
+    }
+    const body = res.body || {};
+    // Jika verifikasi email diwajibkan, body.session kosong
+    return { needsVerification: !body.session };
   }
 
   async function signOut() {
     const nhost = await init();
-    try { await nhost.auth.signOut(); } catch (_) {}
+    try { await nhost.auth.signOut({ all: true }); } catch (_) {}
+    try { nhost.clearSession(); } catch (_) {}
   }
 
   // ---------- Profil aplikasi (public.users) ----------

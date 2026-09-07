@@ -11,7 +11,7 @@ Paket integrasi **SIRAT — Sistem Informasi Persuratan Terpadu** untuk Dinas Ke
                                     └──────────────────────────────┘
 ```
 
-- **Frontend**: `index.html` + `assets/` — SPA vanilla JS tanpa build step, di-host GitHub Pages (gratis).
+- **Frontend**: `index.html` + `assets/` — SPA vanilla JS tanpa build step, di-host GitHub Pages (gratis). **Seluruh pustaka (SDK Nhost & QR) sudah dipaketkan lokal di `assets/vendor/` — tidak ada dependensi CDN saat runtime.**
 - **Backend**: Nhost — PostgreSQL (14 tabel), Hasura GraphQL dengan izin 6 role, Auth (email+password), Storage (lampiran).
 - **Prinsip**: *Satu Surat, Satu Tracking, Satu Arsip.* Setiap perubahan status otomatis tercatat di `riwayat_surat`, notifikasi ke pihak terkait, dan log aktivitas.
 
@@ -54,6 +54,29 @@ nhostRegion: "ap-southeast-1",                 // sesuaikan region
 Commit & push. Selesai — buka `https://<username>.github.io/<repo>/`.
 
 > ⚠️ Setelah mengubah `nhost/config.yaml` atau `adminSecret`, jalankan `nhost config update` (CLI) atau biarkan integrasi Git menerapkannya. **Ganti** `adminSecret` dan webhook secret dengan nilai acak Anda.
+
+### Berkas `assets/vendor/` (wajib ikut diunggah)
+
+| Berkas | Isi |
+|---|---|
+| `assets/vendor/nhost-js.mjs` | SDK `@nhost/nhost-js` v4.8.0 (bundle ESM tunggal, offline) |
+| `assets/vendor/qrcode.min.js` | Pustaka QR code (qrcodejs 1.0.0) |
+
+Kedua berkas **wajib ikut ter-commit** — aplikasi memuatnya dari origin sendiri, bukan dari CDN. Ini yang membuat SIRAT tetap jalan meski jaringan pengguna memblokir `esm.sh`/CDN eksternal.
+
+### Domain kustom / self-hosting (opsional)
+
+Bila memakai domain kustom Nhost, isi `nhostAuthUrl` / `nhostGraphQLUrl` di `assets/config.js` (URL lengkap berakhiran `/v1`) — nilai tersebut menggantikan `subdomain`+`region`.
+
+## 4b. Troubleshooting
+
+| Gejala | Penyebab | Solusi |
+|---|---|---|
+| Halaman putih, console: `Gagal memuat Nhost SDK` / `blocked by CORS policy ... not a secure context ... more-private address space local` | Jaringan/DNS lokal mengarahkan CDN (`esm.sh`) ke IP pribadi sehingga browser memblokirnya; atau berkas `assets/vendor/` tidak terunggah | Sudah diperbaiki: SDK dimuat lokal dari `assets/vendor/nhost-js.mjs`. Pastikan folder `vendor/` ikut di-commit & di-push. Lalu muat ulang (Ctrl+Shift+R) |
+| `404` saat membuka halaman | `index.html` tidak di root repo Pages, atau Pages belum aktif | Pastikan `index.html` di root, Settings → Pages → Source: GitHub Actions |
+| Login muncul `Failed to fetch` | Subdomain/region Nhost salah, atau proyek Nhost paused | Cek `assets/config.js`, pastikan proyek Nhost aktif (running) di Dashboard |
+| Login berhasil tapi data kosong/error izin | Migrasi/metadata `nhost/` belum diterapkan | Hubungkan repo ke Nhost (Integrations → Git) atau jalankan `nhost deploy` |
+| Website diakses via `http://` (bukan https) | Enforce HTTPS belum aktif | GitHub → Settings → Pages → centang **Enforce HTTPS** (disarankan agar sesi & token lebih aman) |
 
 ## 5. Struktur `nhost/`
 
