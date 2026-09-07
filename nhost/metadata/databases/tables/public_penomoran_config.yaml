@@ -1,0 +1,30 @@
+# Konfigurasi penomoran (metadata Hasura)
+- name:
+    schema: public
+    name: penomoran_config
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission: { columns: "*", filter: {} }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { check: { status: { _eq: AKTIF } }, columns: [counter, last_reset, format, status], filter: { status: { _eq: AKTIF } } }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }

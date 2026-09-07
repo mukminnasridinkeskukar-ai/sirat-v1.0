@@ -1,0 +1,51 @@
+# ============================================================
+# SIRAT — Konfigurasi Proyek Nhost
+# Dinas Kesehatan Kabupaten Kutai Kartanegara
+# Referensi: https://docs.nhost.io/reference/self-hosting/nhost-yml
+# Catatan: ganti adminSecret dengan nilai acak milik Anda,
+# atau kelola lewat Nhost Console (Settings → Secrets).
+# ============================================================
+kind: v2
+metadata:
+  name: sirat-dinkes-kukar
+spec:
+  # ---------- AUTHENTIKASI ----------
+  auth:
+    session:
+      accessToken:
+        expiresTime: "900" # menit → 15 jam
+      refreshToken:
+        expiresTime: "43200" # menit → 30 hari
+    signUp:
+      enabled: true
+      defaultRole: OPERATOR
+      allowedRoles:
+        - OPERATOR
+        - VIEWER
+    locale:
+      default: id
+      allowedLocales:
+        - id
+        - en
+    email:
+      signInWithLinkEnabled: false
+      passwordHIBPEnabled: false
+    anonymousUsersEnabled: false
+
+  # ---------- HASURA (GraphQL) ----------
+  hasura:
+    version: v2.44.0
+    metadataMode: allowed
+    adminSecret: sirat-admin-secret-ubah-saya
+
+  # ---------- POSTGRES ----------
+  postgres:
+    version: 15
+
+  # ---------- STORAGE (lampiran) ----------
+  storage:
+    version: 0.6.0
+
+  # ---------- FUNCTIONS (opsional) ----------
+  functions:
+    nodeVersion: 18

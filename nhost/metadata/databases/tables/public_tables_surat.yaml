@@ -1,0 +1,238 @@
+# ============================================================
+# SIRAT — Metadata Hasura: surat_masuk, surat_keluar, disposisi
+# ============================================================
+
+# ---------- SURAT_MASUK ----------
+- name:
+    schema: public
+    name: surat_masuk
+  object_relationships:
+    - name: creator
+      using:
+        foreign_key_constraint_on: created_by
+  array_relationships:
+    - name: disposisis
+      using:
+        foreign_key_constraint_on: surat_masuk_id
+    - name: riwayats
+      using:
+        manual_configuration:
+          column_mapping:
+            id: surat_id
+          insertion_order: null
+          remote_table:
+            schema: public
+            name: riwayat_surat
+    - name: lampirans
+      using:
+        manual_configuration:
+          column_mapping:
+            id: surat_id
+          insertion_order: null
+          remote_table:
+            schema: public
+            name: lampiran
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission:
+        columns: "*"
+        filter:
+          _or:
+            - { created_by: { _eq: X-Hasura-User-Id } }
+            - { disposisis: { kepada_user_id: { _eq: X-Hasura-User-Id } } }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+    - role: OPERATOR
+      permission:
+        check: { created_by: { _eq: X-Hasura-User-Id } }
+        columns: [nomor_surat, tanggal_surat, tanggal_diterima, pengirim, perihal, tujuan, sifat, prioritas, file_url, keterangan, created_by]
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: OPERATOR
+      permission:
+        check: { created_by: { _eq: X-Hasura-User-Id }, status: { _eq: BARU } }
+        columns: [nomor_surat, tanggal_surat, pengirim, perihal, tujuan, sifat, prioritas, file_url, keterangan]
+        filter: { created_by: { _eq: X-Hasura-User-Id }, status: { _eq: BARU } }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+    - role: ADMIN
+      permission: { filter: {} }
+
+# ---------- SURAT_KELUAR ----------
+- name:
+    schema: public
+    name: surat_keluar
+  object_relationships:
+    - name: creator
+      using:
+        foreign_key_constraint_on: created_by
+    - name: unit_kerja
+      using:
+        foreign_key_constraint_on: unit_kerja_id
+    - name: penandatangan
+      using:
+        foreign_key_constraint_on: penandatangan_id
+  array_relationships:
+    - name: riwayats
+      using:
+        manual_configuration:
+          column_mapping:
+            id: surat_id
+          insertion_order: null
+          remote_table:
+            schema: public
+            name: riwayat_surat
+    - name: lampirans
+      using:
+        manual_configuration:
+          column_mapping:
+            id: surat_id
+          insertion_order: null
+          remote_table:
+            schema: public
+            name: lampiran
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission:
+        columns: "*"
+        filter:
+          _or:
+            - { created_by: { _eq: X-Hasura-User-Id } }
+            - { status: { _nin: [DRAFT, DIAJUKAN, PERLU_KOREKSI] } }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+    - role: public
+      permission:
+        columns: [id, nomor_surat, jenis_surat, tanggal_surat, tujuan, perihal, sifat, status, created_at]
+        filter:
+          qr_token: { _ne: null }
+          status: { _in: [DITANDATANGANI, DIDISTRIBUSIKAN, SELESAI, DIARSIPKAN] }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+    - role: OPERATOR
+      permission:
+        check: { created_by: { _eq: X-Hasura-User-Id } }
+        columns: [jenis_surat, tanggal_surat, tujuan, perihal, isi, sifat, lampiran_ket, tembusan, unit_kerja_id, penandatangan_id, qr_token, created_by]
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: OPERATOR
+      permission:
+        check:
+          created_by: { _eq: X-Hasura-User-Id }
+          status: { _in: [DRAFT, PERLU_KOREKSI] }
+        columns: [jenis_surat, tanggal_surat, tujuan, perihal, isi, sifat, lampiran_ket, tembusan, unit_kerja_id, penandatangan_id, status, catatan_koreksi]
+        filter:
+          created_by: { _eq: X-Hasura-User-Id }
+          status: { _in: [DRAFT, PERLU_KOREKSI] }
+    - role: VERIFIKATOR
+      permission:
+        check: { status: { _eq: DIAJUKAN } }
+        columns: [status, catatan_koreksi]
+        filter: { status: { _eq: DIAJUKAN } }
+    - role: PIMPINAN
+      permission:
+        check: { status: { _eq: DIVERIFIKASI } }
+        columns: [status, nomor_surat, catatan_pimpinan]
+        filter: { status: { _eq: DIVERIFIKASI } }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+    - role: ADMIN
+      permission: { filter: {} }
+
+# ---------- DISPOSISI ----------
+- name:
+    schema: public
+    name: disposisi
+  object_relationships:
+    - name: surat_masuk
+      using:
+        foreign_key_constraint_on: surat_masuk_id
+    - name: dari_user
+      using:
+        foreign_key_constraint_on: dari_user_id
+    - name: kepada_user
+      using:
+        foreign_key_constraint_on: kepada_user_id
+    - name: kepada_unit
+      using:
+        foreign_key_constraint_on: kepada_unit_id
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission:
+        columns: "*"
+        filter:
+          _or:
+            - { kepada_user_id: { _eq: X-Hasura-User-Id } }
+            - { dari_user_id: { _eq: X-Hasura-User-Id } }
+            - { surat_masuk: { created_by: { _eq: X-Hasura-User-Id } } }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+    - role: PIMPINAN
+      permission: { check: {}, columns: "*" }
+    - role: VERIFIKATOR
+      permission: { check: {}, columns: "*" }
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission:
+        check: {}
+        columns: "*"
+        filter: {}
+    - role: OPERATOR
+      permission:
+        check: { kepada_user_id: { _eq: X-Hasura-User-Id } }
+        columns: [status, catatan]
+        filter: { kepada_user_id: { _eq: X-Hasura-User-Id } }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+    - role: ADMIN
+      permission: { filter: {} }

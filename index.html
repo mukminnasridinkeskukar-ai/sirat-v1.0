@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIRAT — Sistem Informasi Persuratan Terpadu | Dinkes Kutai Kartanegara</title>
+  <meta name="description" content="Persuratan Terpadu, Cepat, Tertib, dan Terlacak. Satu Surat, Satu Tracking, Satu Arsip." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📨</text></svg>" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <!-- ============ LANDING ============ -->
+  <div id="view-landing" class="view" hidden>
+    <header class="topbar-landing">
+      <div class="brand"><span class="brand-icon">📨</span><div><b>SIRAT</b><small>Sistem Informasi Persuratan Terpadu</small></div></div>
+      <nav class="nav-links">
+        <a href="#tentang">Tentang</a><a href="#fitur">Fitur</a><a href="#alur">Panduan</a>
+        <button class="btn btn-primary" data-action="go-login">Masuk ke SIRAT</button>
+      </nav>
+    </header>
+    <section class="hero">
+      <span class="chip">🏛️ Dinas Kesehatan Kabupaten Kutai Kartanegara</span>
+      <h1>Persuratan Kedinasan Lebih <em>Cepat</em>, Terpadu, dan <u>Terlacak</u>.</h1>
+      <p class="hero-sub">SIRAT menghadirkan pengelolaan persuratan digital yang terintegrasi dari pembuatan hingga pengarsipan — satu platform untuk seluruh unit kerja, UPTD, dan Puskesmas di lingkungan Dinas Kesehatan Kabupaten Kutai Kartanegara. <b>Persuratan Terpadu, Cepat, Tertib, dan Terlacak.</b></p>
+      <div class="hero-actions">
+        <button class="btn btn-primary btn-lg" data-action="go-login">Masuk ke SIRAT →</button>
+        <a class="btn btn-outline btn-lg" href="#alur">Lihat Panduan</a>
+      </div>
+    </section>
+    <section id="tentang" class="section">
+      <h2>Satu Surat, Satu Tracking, Satu Arsip.</h2>
+      <p class="section-sub">Setiap surat memiliki identitas unik, riwayat lengkap, dan lokasi arsip digital yang jelas — tidak perlu bertanya-tanya lagi surat sedang ada di mana.</p>
+      <div class="grid-3">
+        <div class="card"><div class="card-ico">⚡</div><h3>Cepat</h3><p>Penulisan dengan template, verifikasi daring, penomoran otomatis, dan tanda tangan digital — tanpa antre berkas fisik antar meja.</p></div>
+        <div class="card"><div class="card-ico">🧭</div><h3>Tertib</h3><p>Alur baku: draft → ajukan → verifikasi → persetujuan → penomoran → tanda tangan → distribusi → arsip. Semua tahap terekam otomatis.</p></div>
+        <div class="card"><div class="card-ico">🔎</div><h3>Terlacak</h3><p>Timeline riwayat per surat: siapa melakukan apa, kapan, dengan catatan apa. Notifikasi mengalir ke pihak terkait secara real-time.</p></div>
+      </div>
+    </section>
+    <section id="fitur" class="section alt">
+      <h2>Fitur Utama</h2>
+      <div class="grid-4">
+        <div class="card sm"><b>📥 Surat Masuk</b><p>Registrasi, verifikasi, disposisi berjenjang, dan arsip surat masuk.</p></div>
+        <div class="card sm"><b>📤 Surat Keluar</b><p>Workflow lengkap 11 status dari draft hingga terarsip.</p></div>
+        <div class="card sm"><b>📝 Template Surat</b><p>10 template baku + form dinamis, konsisten tiap unit.</p></div>
+        <div class="card sm"><b>🔢 Penomoran Otomatis</b><p>Format 0001/BID-P2P/DINKES/IX/2026 tanpa duplikat.</p></div>
+        <div class="card sm"><b>✅ Verifikasi &amp; Persetujuan</b><p>Verifikator mengecek, pimpinan menyetujui/mengembalikan.</p></div>
+        <div class="card sm"><b>📌 Disposisi</b><p>Instruksi, prioritas, batas waktu, status tindak lanjut.</p></div>
+        <div class="card sm"><b>🔎 Tracking Timeline</b><p>Riwayat 10 titik periksa per surat, transparan.</p></div>
+        <div class="card sm"><b>🗄️ Arsip + QR</b><p>Arsip digital, export CSV, QR verifikasi keaslian dokumen.</p></div>
+      </div>
+    </section>
+    <section id="alur" class="section">
+      <h2>Panduan Alur Persuratan</h2>
+      <ol class="steps">
+        <li><b>Tulis surat</b> — pilih template, isi form, simpan sebagai draft.</li>
+        <li><b>Ajukan</b> — draft dikirim ke verifikator (status: Diajukan).</li>
+        <li><b>Verifikasi</b> — verifikator menyetujui, mengembalikan untuk koreksi, atau menolak dengan catatan.</li>
+        <li><b>Persetujuan pimpinan</b> — Kepala Dinas/Bidang menyetujui; nomor surat diterbitkan otomatis.</li>
+        <li><b>Tanda tangan digital</b> — surat ditandatangani dan dilengkapi QR Code.</li>
+        <li><b>Distribusi &amp; arsip</b> — surat didistribusikan, selesai, lalu terarsip digital.</li>
+      </ol>
+      <div class="hero-actions" style="justify-content:center;margin-top:24px">
+        <button class="btn btn-primary btn-lg" data-action="go-login">Masuk ke SIRAT →</button>
+      </div>
+    </section>
+    <footer class="footer">© 2026 Dinas Kesehatan Kabupaten Kutai Kartanegara — SIRAT v1.0 · Persuratan Terpadu, Cepat, Tertib, dan Terlacak.</footer>
+  </div>
+
+  <!-- ============ LOGIN / DAFTAR ============ -->
+  <div id="view-auth" class="view auth-wrap" hidden>
+    <div class="auth-card">
+      <button class="linklike" data-action="go-landing">← Kembali ke Beranda</button>
+      <div class="auth-brand">📨 <b>SIRAT</b><div>Satu Surat, Satu Tracking, Satu Arsip.</div></div>
+      <div class="tabs">
+        <button class="tab active" data-auth-tab="login">Masuk</button>
+        <button class="tab" data-auth-tab="daftar">Daftar</button>
+      </div>
+      <form id="form-login" autocomplete="on">
+        <label>Email atau akun Nhost Anda
+          <input type="email" id="login-email" placeholder="nama@sirat.kukar.go.id" required />
+        </label>
+        <label>Kata sandi
+          <span class="pw-wrap">
+            <input type="password" id="login-password" placeholder="••••••••" required minlength="8" />
+            <button type="button" class="pw-toggle" data-action="toggle-pw">👁</button>
+          </span>
+        </label>
+        <label class="row-between"><span class="check"><input type="checkbox" id="login-remember" checked /> Ingat saya</span><a href="#" onclick="return false" title="Hubungi administrator untuk reset kata sandi" class="muted">Lupa password?</a></label>
+        <button type="submit" class="btn btn-primary btn-block" id="btn-login">Masuk</button>
+        <div id="login-error" class="form-error" hidden></div>
+        <p class="muted small">Gunakan akun yang diberikan administrator. Pendaftaran mandiri berperan awal <b>OPERATOR</b>.</p>
+      </form>
+      <form id="form-daftar" hidden>
+        <label>Nama lengkap<input type="text" id="daftar-nama" placeholder="Nama Anda" required /></label>
+        <label>Email<input type="email" id="daftar-email" placeholder="nama@sirat.kukar.go.id" required /></label>
+        <label>Kata sandi (min. 8 karakter)
+          <input type="password" id="daftar-password" required minlength="8" placeholder="••••••••" />
+        </label>
+        <label>Unit kerja<select id="daftar-unit"></select></label>
+        <button type="submit" class="btn btn-primary btn-block" id="btn-daftar">Buat Akun</button>
+        <div id="daftar-error" class="form-error" hidden></div>
+      </form>
+      <div id="auth-loading" class="auth-loading" hidden><span class="spinner"></span> Memproses…</div>
+    </div>
+  </div>
+
+  <!-- ============ APLIKASI (SHELL) ============ -->
+  <div id="view-app" class="view app" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand side"><span class="brand-icon">📨</span><div><b>SIRAT</b><small>Persuratan Terpadu</small></div></div>
+      <nav id="menu"></nav>
+      <div class="sidebar-foot"><div id="side-user"></div><small>SIRAT v1.0 — Nhost Edition</small></div>
+    </aside>
+    <div class="main">
+      <header class="appbar">
+        <button class="btn ghost only-mobile" data-action="toggle-menu">☰</button>
+        <div><small id="appbar-sub" class="muted">Dinas Kesehatan Kab. Kutai Kartanegara</small><div id="appbar-title"><b>SIRAT</b></div></div>
+        <div class="appbar-right">
+          <button class="icon-btn" data-action="open-notif" id="btn-notif" title="Notifikasi">🔔<span class="dot" id="notif-dot" hidden></span></button>
+          <div class="userchip" id="userchip"></div>
+          <button class="btn ghost" data-action="logout">Keluar</button>
+        </div>
+      </header>
+      <div class="drawer-backdrop" id="drawer-backdrop" data-action="close-menu" hidden></div>
+      <main id="content" class="content"></main>
+    </div>
+    <!-- Panel notifikasi -->
+    <div class="sheet" id="sheet-notif" hidden>
+      <div class="sheet-head"><b>🔔 Notifikasi</b><button class="icon-btn" data-action="close-notif">✕</button></div>
+      <div id="notif-list" class="notif-list"></div>
+      <button class="btn ghost btn-block" data-action="read-all-notif">Tandai semua dibaca</button>
+    </div>
+  </div>
+
+  <!-- ============ VERIFIKASI QR PUBLIK ============ -->
+  <div id="view-verify" class="view" hidden>
+    <header class="topbar-landing"><div class="brand"><span class="brand-icon">📨</span><div><b>SIRAT</b><small>Verifikasi Dokumen Publik</small></div></div></header>
+    <div id="verify-body" class="verify-body"></div>
+  </div>
+
+  <div id="toasts" class="toasts"></div>
+  <div id="modal-root"></div>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/nhost.js"></script>
+  <script src="assets/ui.js"></script>
+  <script src="assets/queries.js"></script>
+  <script src="assets/app.js"></script>
+  <script src="assets/module-masuk.js"></script>
+  <script src="assets/module-keluar.js"></script>
+  <script src="assets/module-misc.js"></script>
+</body>
+</html>

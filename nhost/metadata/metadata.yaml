@@ -1,0 +1,5 @@
+version: 3
+sources:
+  - name: default
+    kind: postgres
+    tables: "!include databases/tables/*.yaml"

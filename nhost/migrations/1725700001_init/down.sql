@@ -1,0 +1,25 @@
+-- Rollback migrasi init SIRAT
+drop trigger if exists trg_template_updated on public.template_surat;
+drop trigger if exists on_auth_user_created on auth.users;
+drop function if exists public.handle_new_user();
+drop trigger if exists trg_disposisi_updated on public.disposisi;
+drop trigger if exists trg_sk_updated on public.surat_keluar;
+drop trigger if exists trg_sm_updated on public.surat_masuk;
+drop trigger if exists trg_pejabat_updated on public.pejabat;
+drop trigger if exists trg_unit_updated on public.unit_kerja;
+drop trigger if exists trg_users_updated on public.users;
+drop function if exists public.set_updated_at();
+drop table if exists public.pengaturan;
+drop table if exists public.penomoran_config;
+drop table if exists public.log_aktivitas;
+drop table if exists public.notifikasi;
+drop table if exists public.lampiran;
+drop table if exists public.nomor_surat;
+drop table if exists public.template_surat;
+drop table if exists public.riwayat_surat;
+drop table if exists public.disposisi;
+drop table if exists public.surat_keluar;
+drop table if exists public.surat_masuk;
+drop table if exists public.pejabat;
+drop table if exists public.users;
+drop table if exists public.unit_kerja;

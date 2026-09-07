@@ -1,0 +1,381 @@
+# ============================================================
+# SIRAT — Metadata Hasura: tabel master & pendukung
+# Role: SUPERADMIN, ADMIN, VERIFIKATOR, PIMPINAN, OPERATOR, VIEWER, public
+# ============================================================
+
+# ---------- UNIT_KERJA ----------
+- name:
+    schema: public
+    name: unit_kerja
+  object_relationships:
+    - name: parent
+      using:
+        foreign_key_constraint_on: parent_id
+  array_relationships:
+    - name: children
+      using:
+        foreign_key_constraint_on: parent_id
+    - name: users
+      using:
+        foreign_key_constraint_on: unit_kerja_id
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission: { columns: "*", filter: {} }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+    - role: public
+      permission:
+        columns: [id, kode, nama_unit, jenis_unit]
+        filter: {}
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: [kode, nama_unit, jenis_unit, parent_id, status] }
+    - role: ADMIN
+      permission: { check: {}, columns: [kode, nama_unit, jenis_unit, parent_id, status] }
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: [nama_unit, jenis_unit, parent_id, status], filter: {} }
+    - role: ADMIN
+      permission: { check: {}, columns: [nama_unit, jenis_unit, parent_id, status], filter: {} }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+
+# ---------- USERS (profil) ----------
+- name:
+    schema: public
+    name: users
+  object_relationships:
+    - name: unit_kerja
+      using:
+        foreign_key_constraint_on: unit_kerja_id
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission:
+        columns: [id, nama, username, email, role, jabatan, nip, unit_kerja_id, status]
+        filter: {}
+    - role: PIMPINAN
+      permission:
+        columns: [id, nama, username, email, role, jabatan, nip, unit_kerja_id, status]
+        filter: {}
+    - role: OPERATOR
+      permission:
+        columns: [id, nama, username, email, role, jabatan, unit_kerja_id, status]
+        filter: {}
+    - role: VIEWER
+      permission:
+        columns: [id, nama, username, role, jabatan, unit_kerja_id, status]
+        filter: {}
+  insert_permissions:
+    - role: SUPERADMIN
+      permission:
+        check: {}
+        columns: [id, nama, username, email, role, jabatan, nip, unit_kerja_id, status]
+    - role: ADMIN
+      permission:
+        check: {}
+        columns: [id, nama, username, email, role, jabatan, nip, unit_kerja_id, status]
+    - role: OPERATOR
+      permission:
+        check: { id: { _eq: X-Hasura-User-Id } }
+        columns: [id, nama, username, email]
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: [nama, username, email, role, jabatan, nip, unit_kerja_id, status], filter: {} }
+    - role: ADMIN
+      permission: { check: {}, columns: [nama, username, email, role, jabatan, nip, unit_kerja_id, status], filter: {} }
+    - role: OPERATOR
+      permission:
+        check: { id: { _eq: X-Hasura-User-Id } }
+        columns: [nama, jabatan, nip]
+        filter: { id: { _eq: X-Hasura-User-Id } }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+
+# ---------- PEJABAT ----------
+- name:
+    schema: public
+    name: pejabat
+  object_relationships:
+    - name: unit_kerja
+      using:
+        foreign_key_constraint_on: unit_kerja_id
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission: { columns: "*", filter: {} }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+    - role: public
+      permission:
+        columns: [id, nama, jabatan]
+        filter: {}
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: [nama, jabatan, nip, unit_kerja_id, status] }
+    - role: ADMIN
+      permission: { check: {}, columns: [nama, jabatan, nip, unit_kerja_id, status] }
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: [nama, jabatan, nip, unit_kerja_id, status], filter: {} }
+    - role: ADMIN
+      permission: { check: {}, columns: [nama, jabatan, nip, unit_kerja_id, status], filter: {} }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+
+# ---------- TEMPLATE_SURAT ----------
+- name:
+    schema: public
+    name: template_surat
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: { status: { _eq: AKTIF } } }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: { status: { _eq: AKTIF } } }
+    - role: OPERATOR
+      permission: { columns: "*", filter: { status: { _eq: AKTIF } } }
+    - role: VIEWER
+      permission: { columns: "*", filter: { status: { _eq: AKTIF } } }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: [nama_template, jenis_surat, template_content, fields, status] }
+    - role: ADMIN
+      permission: { check: {}, columns: [nama_template, jenis_surat, template_content, fields, status] }
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { check: {}, columns: "*", filter: {} }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+
+# ---------- NOMOR_SURAT ----------
+- name:
+    schema: public
+    name: nomor_surat
+  object_relationships:
+    - name: surat
+      using:
+        foreign_key_constraint_on: surat_id
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission: { columns: "*", filter: {} }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: [nomor_urut, kode_unit, kode_jenis, tahun, nomor_lengkap, surat_id, created_by] }
+    - role: ADMIN
+      permission: { check: {}, columns: [nomor_urut, kode_unit, kode_jenis, tahun, nomor_lengkap, surat_id, created_by] }
+    - role: VERIFIKATOR
+      permission: { check: {}, columns: [nomor_urut, kode_unit, kode_jenis, tahun, nomor_lengkap, surat_id, created_by] }
+    - role: PIMPINAN
+      permission: { check: {}, columns: [nomor_urut, kode_unit, kode_jenis, tahun, nomor_lengkap, surat_id, created_by] }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+
+# ---------- LAMPIRAN ----------
+- name:
+    schema: public
+    name: lampiran
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission:
+        columns: "*"
+        filter:
+          _or:
+            - { uploaded_by: { _eq: X-Hasura-User-Id } }
+            - { jenis_surat: { _eq: MASUK } }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+    - role: VERIFIKATOR
+      permission: { check: { uploaded_by: { _eq: X-Hasura-User-Id } }, columns: "*" }
+    - role: OPERATOR
+      permission: { check: { uploaded_by: { _eq: X-Hasura-User-Id } }, columns: "*" }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+    - role: ADMIN
+      permission: { filter: {} }
+
+# ---------- RIWAYAT_SURAT ----------
+- name:
+    schema: public
+    name: riwayat_surat
+  object_relationships:
+    - name: user
+      using:
+        foreign_key_constraint_on: user_id
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission: { columns: "*", filter: {} }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+    - role: VERIFIKATOR
+      permission: { check: {}, columns: "*" }
+    - role: PIMPINAN
+      permission: { check: {}, columns: "*" }
+    - role: OPERATOR
+      permission: { check: {}, columns: "*" }
+    - role: VIEWER
+      permission: { check: { user_id: { _eq: X-Hasura-User-Id } }, columns: "*" }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+
+# ---------- NOTIFIKASI ----------
+- name:
+    schema: public
+    name: notifikasi
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: ADMIN
+      permission: { columns: "*", filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: OPERATOR
+      permission: { columns: "*", filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: VIEWER
+      permission: { columns: "*", filter: { user_id: { _eq: X-Hasura-User-Id } } }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+    - role: VERIFIKATOR
+      permission: { check: {}, columns: "*" }
+    - role: PIMPINAN
+      permission: { check: {}, columns: "*" }
+    - role: OPERATOR
+      permission: { check: {}, columns: "*" }
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: { user_id: { _eq: X-Hasura-User-Id } }, columns: [dibaca], filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: ADMIN
+      permission: { check: { user_id: { _eq: X-Hasura-User-Id } }, columns: [dibaca], filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: VERIFIKATOR
+      permission: { check: { user_id: { _eq: X-Hasura-User-Id } }, columns: [dibaca], filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: PIMPINAN
+      permission: { check: { user_id: { _eq: X-Hasura-User-Id } }, columns: [dibaca], filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: OPERATOR
+      permission: { check: { user_id: { _eq: X-Hasura-User-Id } }, columns: [dibaca], filter: { user_id: { _eq: X-Hasura-User-Id } } }
+    - role: VIEWER
+      permission: { check: { user_id: { _eq: X-Hasura-User-Id } }, columns: [dibaca], filter: { user_id: { _eq: X-Hasura-User-Id } } }
+  delete_permissions:
+    - role: SUPERADMIN
+      permission: { filter: {} }
+
+# ---------- LOG_AKTIVITAS ----------
+- name:
+    schema: public
+    name: log_aktivitas
+  object_relationships:
+    - name: user
+      using:
+        foreign_key_constraint_on: user_id
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+    - role: ADMIN
+      permission: { check: {}, columns: "*" }
+    - role: VERIFIKATOR
+      permission: { check: {}, columns: "*" }
+    - role: PIMPINAN
+      permission: { check: {}, columns: "*" }
+    - role: OPERATOR
+      permission: { check: {}, columns: "*" }
+    - role: VIEWER
+      permission: { check: {}, columns: "*" }
+
+# ---------- PENGATURAN ----------
+- name:
+    schema: public
+    name: pengaturan
+  select_permissions:
+    - role: SUPERADMIN
+      permission: { columns: "*", filter: {} }
+    - role: ADMIN
+      permission: { columns: "*", filter: {} }
+    - role: VERIFIKATOR
+      permission: { columns: "*", filter: {} }
+    - role: PIMPINAN
+      permission: { columns: "*", filter: {} }
+    - role: OPERATOR
+      permission: { columns: "*", filter: {} }
+    - role: VIEWER
+      permission: { columns: "*", filter: {} }
+  insert_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*" }
+  update_permissions:
+    - role: SUPERADMIN
+      permission: { check: {}, columns: "*", filter: {} }
