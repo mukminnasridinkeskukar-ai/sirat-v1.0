@@ -9,6 +9,13 @@
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
+  <!-- Banner status koneksi backend (tampil otomatis saat server Nhost tak terjangkau) -->
+  <div id="conn-banner" class="conn-banner" hidden>
+    <span class="conn-ico">⚠️</span>
+    <div class="conn-msg"><b>Tidak dapat terhubung ke server SIRAT</b><small id="conn-detail"></small></div>
+    <button class="icon-btn conn-close" data-action="close-conn" title="Tutup">✕</button>
+  </div>
+
   <!-- ============ LANDING ============ -->
   <div id="view-landing" class="view" hidden>
     <header class="topbar-landing">
@@ -124,9 +131,10 @@
       <div class="drawer-backdrop" id="drawer-backdrop" data-action="close-menu" hidden></div>
       <main id="content" class="content"></main>
     </div>
-    <!-- Panel notifikasi -->
-    <div class="sheet" id="sheet-notif" hidden>
-      <div class="sheet-head"><b>🔔 Notifikasi</b><button class="icon-btn" data-action="close-notif">✕</button></div>
+    <!-- Panel notifikasi + backdrop (klik area gelap untuk menutup) -->
+    <div class="sheet-backdrop" id="notif-backdrop" data-action="close-notif" hidden></div>
+    <div class="sheet" id="sheet-notif" hidden role="dialog" aria-label="Notifikasi">
+      <div class="sheet-head"><b>🔔 Notifikasi</b><button class="icon-btn" data-action="close-notif" title="Tutup">✕</button></div>
       <div id="notif-list" class="notif-list"></div>
       <button class="btn ghost btn-block" data-action="read-all-notif">Tandai semua dibaca</button>
     </div>

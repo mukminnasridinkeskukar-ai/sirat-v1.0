@@ -267,6 +267,15 @@
   }
   function stopNotifPolling() { if (notifTimer) clearInterval(notifTimer); notifTimer = null; }
 
+  // Pesan ramah utk kegagalan jaringan/DNS (mis. net::ERR_NAME_NOT_RESOLVED)
+  function pesanJaringan(e) {
+    const m = String((e && e.message) || "");
+    if (/fetch|network|jaringan|name_not_resolved|nhost\.run|load failed/i.test(m)) {
+      return "Tidak dapat terhubung ke server. Periksa koneksi internet Anda atau konfigurasi Nhost di assets/config.js, lalu coba lagi.";
+    }
+    return m || "Terjadi kesalahan.";
+  }
+
   async function refreshNotifDot() {
     if (!SIRAT.me) return;
     try {
@@ -275,7 +284,14 @@
     } catch (_) {}
   }
 
+  function closeNotif() {
+    show($("#sheet-notif"), false);
+    show($("#notif-backdrop"), false);
+  }
+
   async function openNotif() {
+    if (!SIRAT.me) { toast("Masuk terlebih dahulu untuk melihat notifikasi.", "err"); return; }
+    show($("#notif-backdrop"), true);
     const sheet = $("#sheet-notif");
     show(sheet, true);
     $("#notif-list").innerHTML = `<div class="loading-block"><span class="spinner" style="border-color:var(--green-700)"></span></div>`;
@@ -290,12 +306,12 @@
         el.classList.remove("unread");
         refreshNotifDot();
         if (el.dataset.sid) {
-          show(sheet, false);
+          closeNotif();
           goto(el.dataset.sjenis === "MASUK" ? "surat-masuk" : "surat-keluar", el.dataset.sid);
         }
       }));
     } catch (e) {
-      $("#notif-list").innerHTML = `<div class="empty-block">⚠️ ${esc(e.message)}</div>`;
+      $("#notif-list").innerHTML = `<div class="empty-block"><span class="big">📡</span>${esc(pesanJaringan(e))}</div>`;
     }
   }
 
@@ -400,8 +416,9 @@
     if (t.dataset.action === "toggle-menu") { $("#sidebar").classList.add("open"); show($("#drawer-backdrop"), true); }
     if (t.dataset.action === "close-menu") { $("#sidebar").classList.remove("open"); show($("#drawer-backdrop"), false); }
     if (t.dataset.action === "open-notif") openNotif();
-    if (t.dataset.action === "close-notif") show($("#sheet-notif"), false);
-    if (t.dataset.action === "read-all-notif") N.gql(Q.notifBacaSemua, { uid: SIRAT.me.id }).then(() => { openNotif(); refreshNotifDot(); toast("Semua notifikasi ditandai dibaca.", "ok"); });
+    if (t.dataset.action === "close-notif") closeNotif();
+    if (t.dataset.action === "close-conn") show($("#conn-banner"), false);
+    if (t.dataset.action === "read-all-notif" && SIRAT.me) N.gql(Q.notifBacaSemua, { uid: SIRAT.me.id }).then(() => { openNotif(); refreshNotifDot(); toast("Semua notifikasi ditandai dibaca.", "ok"); });
     if (t.dataset.action === "toggle-pw") {
       const inp = $("#login-password");
       inp.type = inp.type === "password" ? "text" : "password";
@@ -458,6 +475,27 @@
     $$("[data-auth-tab]").forEach((b) => b.classList.toggle("active", b === tab));
     show($("#form-login"), tab.dataset.authTab === "login");
     show($("#form-daftar"), tab.dataset.authTab === "daftar");
+  });
+
+  // Tombol Esc menutup panel notifikasi
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeNotif();
+  });
+
+  // Banner status koneksi (sirat:net-error / sirat:net-ok dikirim dari nhost.js)
+  let connShown = false;
+  window.addEventListener("sirat:net-error", (e) => {
+    const det = $("#conn-detail");
+    if (det) det.textContent = "Periksa koneksi internet, subdomain/region Nhost pada assets/config.js, atau status proyek Nhost Anda." + (e.detail ? ` (${e.detail})` : "");
+    show($("#conn-banner"), true);
+    connShown = true;
+  });
+  window.addEventListener("sirat:net-ok", () => {
+    if (connShown) {
+      show($("#conn-banner"), false);
+      connShown = false;
+      toast("Koneksi ke server pulih.", "ok");
+    }
   });
 
   // ================= BOOT =================

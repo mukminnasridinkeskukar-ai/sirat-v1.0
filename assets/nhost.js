@@ -47,14 +47,30 @@
     return state.ready;
   }
 
+  // ---------- Deteksi kegagalan jaringan/DNS (mis. net::ERR_NAME_NOT_RESOLVED) ----------
+  function adalahGagalJaringan(e) {
+    if (e instanceof TypeError) return true; // fetch() gagal DNS/jaringan selalu TypeError
+    const m = String((e && e.message) || "");
+    return /failed to fetch|networkerror|load failed|err_name_not_resolved|fetch failed|name_not_resolved/i.test(m);
+  }
+  function beriTahuJaringan(ok, pesan) {
+    try { window.dispatchEvent(new CustomEvent(ok ? "sirat:net-ok" : "sirat:net-error", { detail: pesan })); } catch (_) {}
+  }
+
   // ---------- GraphQL ----------
   async function gql(query, variables) {
     const nhost = await init();
     let res;
     try {
       res = await nhost.graphql.request({ query, variables });
+      beriTahuJaringan(true);
     } catch (e) {
-      // FetchError (HTTP != 2xx) atau kegagalan jaringan
+      // FetchError (HTTP != 2xx) atau kegagalan jaringan/DNS
+      if (adalahGagalJaringan(e)) {
+        beriTahuJaringan(false, e && e.message);
+        console.warn("Koneksi ke server Nhost gagal:", e);
+        throw new Error("Tidak dapat terhubung ke server SIRAT. Periksa koneksi internet atau konfigurasi Nhost (assets/config.js).");
+      }
       const pesan =
         e && e.body && e.body.message ? e.body.message : e && e.message ? e.message : "Tidak dapat terhubung ke server SIRAT.";
       throw new Error(pesan);
@@ -73,7 +89,8 @@
     let session = nhost.getUserSession();
     if (!session) {
       // Coba pulihkan sesi lewat refresh token
-      try { session = await nhost.refreshSession(0); } catch (_) { session = null; }
+      try { session = await nhost.refreshSession(0); }
+      catch (e) { if (adalahGagalJaringan(e)) beriTahuJaringan(false, e && e.message); session = null; }
     }
     return session && session.user ? session.user : null;
   }
@@ -92,6 +109,10 @@
     try {
       res = await nhost.auth.signInEmailPassword({ email, password });
     } catch (e) {
+      if (adalahGagalJaringan(e)) {
+        beriTahuJaringan(false, e && e.message);
+        throw new Error("Tidak dapat terhubung ke server SIRAT. Periksa koneksi internet atau konfigurasi Nhost (assets/config.js).");
+      }
       throw new Error(pesanError(e, "Email atau kata sandi salah."));
     }
     const body = res.body || {};
@@ -113,6 +134,10 @@
         },
       });
     } catch (e) {
+      if (adalahGagalJaringan(e)) {
+        beriTahuJaringan(false, e && e.message);
+        throw new Error("Tidak dapat terhubung ke server SIRAT. Periksa koneksi internet atau konfigurasi Nhost (assets/config.js).");
+      }
       throw new Error(pesanError(e, "Pendaftaran gagal."));
     }
     const body = res.body || {};
